@@ -1,0 +1,299 @@
+/* Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply font-sans antialiased bg-gray-50;
+  min-height: 100vh;
+}
+
+* {
+  @apply transition-all duration-300;
+}
+
+/* Components */
+.glassmorphism {
+  @apply bg-white border border-gray-200 shadow-lg;
+  background: #ffffff;
+}
+
+.dark .glassmorphism {
+  @apply bg-gray-800 border border-gray-700;
+  background: #1f2937;
+}
+
+.job-card {
+  @apply transition-all duration-500 transform hover:scale-105 bg-white border border-gray-200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.job-card:hover {
+  @apply shadow-xl;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px) scale(1.02);
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+.gradient-text {
+  @apply text-gray-800;
+}
+
+.vibrant-button {
+  @apply bg-blue-600 text-white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.vibrant-button:hover {
+  @apply bg-blue-700;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.stats-card {
+  @apply bg-white border border-gray-200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Utilities */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Additional CSS classes to replace inline styles */
+
+/* Progress bar styles */
+.progress-bar-full {
+  width: 100%;
+}
+
+.progress-bar-85 {
+  width: 85%;
+}
+
+.progress-bar-70 {
+  width: 70%;
+}
+
+.progress-bar-60 {
+  width: 60%;
+}
+
+/* Animation delay classes */
+.animation-delay-0 {
+  animation-delay: 0s;
+}
+
+.animation-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animation-delay-500 {
+  animation-delay: 0.5s;
+}
+
+/* Header gradient icon */
+.header-icon-gradient {
+  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #6366f1 100%);
+}
+
+/* Footer gradient icon */
+.footer-icon-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%);
+}
+
+/* Hero background blur */
+.hero-bg-blur {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(139, 92, 246, 0.2) 50%, rgba(99, 102, 241, 0.2) 100%);
+  filter: blur(48px);
+}
+
+/* Status indicator dots */
+.status-dot-green {
+  @apply w-2 h-2 bg-green-400 rounded-full animate-pulse;
+}
+
+.status-dot-blue {
+  @apply w-2 h-2 bg-blue-400 rounded-full animate-pulse;
+}
+
+.status-dot-purple {
+  @apply w-2 h-2 bg-purple-400 rounded-full animate-pulse;
+}
+
+/* Icon background gradients */
+.icon-bg-blue-cyan {
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+}
+
+.icon-bg-green-emerald {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.icon-bg-purple-pink {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+}
+
+.icon-bg-orange-red {
+  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+}
+
+/* Progress bar gradients */
+.progress-bg-blue-cyan {
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+}
+
+.progress-bg-green-emerald {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.progress-bg-purple-pink {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+}
+
+.progress-bg-orange-red {
+  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+}
+
+/* Filter overlay */
+.filter-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-60 z-40 lg:hidden;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Filter select styles */
+.filter-select {
+  @apply w-full p-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:border-transparent transition-all duration-300;
+}
+
+.filter-select:focus {
+  @apply ring-blue-500;
+}
+
+.dark .filter-select {
+  @apply bg-gray-700 border-gray-600 text-white;
+}
+
+.dark .filter-select:focus {
+  @apply ring-blue-400;
+}
+
+/* Filter labels */
+.filter-label {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+}
+
+/* Clear filters button */
+.clear-filters-btn {
+  @apply w-full mt-6 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-xl transition-all duration-300 font-medium shadow-lg hover:shadow-xl hover:scale-105;
+}
+
+/* Category item */
+.category-item {
+  @apply flex justify-between items-center p-3 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300;
+}
+
+/* Category count badge */
+.category-count-badge {
+  @apply bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg;
+}
+
+/* Job card hover gradient text */
+.job-title-hover {
+  @apply transition-all duration-300 cursor-pointer;
+}
+
+.job-title-hover:hover {
+  @apply text-transparent bg-clip-text;
+  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+}
+
+/* Job category badge */
+.job-category-badge {
+  @apply inline-block bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg;
+}
+
+/* Mobile filter close button */
+.mobile-filter-close {
+  @apply text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded-lg transition-all duration-300;
+}
+
+/* Header mobile menu button */
+.header-mobile-menu {
+  @apply lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors;
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+  @apply p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300;
+}
+
+/* Loading spinner in search */
+.search-loading-spinner {
+  @apply animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2;
+}
+
+/* Mobile filter button */
+.mobile-filter-button {
+  @apply lg:hidden vibrant-button text-white px-6 py-3 rounded-xl font-medium flex items-center space-x-2 hover:scale-105 transition-all duration-300;
+}
