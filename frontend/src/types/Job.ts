@@ -1,19 +1,14 @@
 export interface Job {
   _id: string;
   title: string;
-  company: string;
+  companyName: string;
+  companyURL: string;
+  jobLocation: string;
+  jobDuration: string;
+  jobURL: string;
+  keyword: string;
   location: string;
-  description: string;
-  salary: string;
-  jobType: 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote';
-  category: string;
-  applicationUrl: string;
-  source: string;
-  datePosted: string;
   scrapedAt: string;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface JobFilters {

@@ -1,30 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Search, 
-  Filter, 
-  Moon, 
-  Sun, 
-  Briefcase, 
-  Building, 
-  Users, 
-  TrendingUp,
+import {
+  Search,
+  Filter,
+  Moon,
+  Sun,
+  Briefcase,
   Menu,
 } from 'lucide-react';
 import { JobCard } from './components/JobCard';
 import { FilterSidebar } from './components/FilterSidebar';
-import { SearchBar } from './components/SearchBar';
-import { Pagination } from './components/Pagination';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
-import { useJobs, useStats } from './hooks/useJobs';
-import { JobFilters } from './types/Job';
+import { useJobs } from './hooks/useJobs';
 
-const JOBS_PER_PAGE = 1; // 👈 adjust number as you like
 
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [location, setLocation] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     jobType: '',
@@ -33,8 +27,7 @@ const App: React.FC = () => {
     source: ''
   });
 
-  const { jobs, loading, error, totalPages, currentPage, total, fetchJobs } = useJobs();
-  const { stats, loading: statsLoading } = useStats();
+  const { jobs, loading, error, fetchJobs } = useJobs();
 
   // Apply dark mode
   useEffect(() => {
@@ -47,27 +40,12 @@ const App: React.FC = () => {
 
   // Initial load
   useEffect(() => {
-  fetchJobs({ page: 1, limit: JOBS_PER_PAGE });
+  fetchJobs();
 }, [fetchJobs]);
 
   const handleSearch = useCallback(() => {
-    const searchFilters: JobFilters = {
-      page: 1,
-      limit: JOBS_PER_PAGE
-    };
-
-    if (searchTerm.trim()) {
-      searchFilters.search = searchTerm.trim();
-    }
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value && key in searchFilters) {
-        (searchFilters as any)[key] = value;
-      }
-    });
-
-    fetchJobs(searchFilters);
-  }, [searchTerm, filters, fetchJobs]);
+    fetchJobs(keyword.trim() || undefined, location.trim() || undefined);
+  }, [keyword, location, fetchJobs]);
 
   // Debounced search
   useEffect(() => {
@@ -76,7 +54,7 @@ const App: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filters, handleSearch]);
+  }, [keyword, location, handleSearch]);
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === 'reset') {
@@ -91,25 +69,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePageChange = (page: number) => {
-    const searchFilters: JobFilters = {
-      page,
-      limit: JOBS_PER_PAGE
-    };
-
-    if (searchTerm.trim()) {
-      searchFilters.search = searchTerm.trim();
-    }
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value && key in searchFilters) {
-        (searchFilters as any)[key] = value;
-      }
-    });
-
-    fetchJobs(searchFilters);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   return (
     <div className="min-h-screen transition-all duration-500">
@@ -188,100 +147,26 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        {stats && !statsLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
-            {/* Total Jobs */}
-            <div className="bg-white dark:bg-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div className="p-4 rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400 shadow-inner">
-                  <Briefcase className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                    {stats.totalJobs.toLocaleString()}
-                  </p>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Total Jobs
-                  </p>
-                </div>
-              </div>
-              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-blue-500 to-cyan-400 w-full rounded-full"></div>
-              </div>
-            </div>
-
-            {/* Companies */}
-            <div className="bg-white dark:bg-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div className="p-4 rounded-xl bg-gradient-to-tr from-green-500 to-emerald-400 shadow-inner">
-                  <Building className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                    {stats.totalCompanies.toLocaleString()}
-                  </p>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Companies
-                  </p>
-                </div>
-              </div>
-              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-green-500 to-emerald-400 w-5/6 rounded-full"></div>
-              </div>
-            </div>
-
-            {/* Categories */}
-            <div className="bg-white dark:bg-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div className="p-4 rounded-xl bg-gradient-to-tr from-purple-500 to-pink-400 shadow-inner">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                    {stats.topCategories.length}
-                  </p>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Categories
-                  </p>
-                </div>
-              </div>
-              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-purple-500 to-pink-400 w-3/4 rounded-full"></div>
-              </div>
-            </div>
-
-            {/* New This Week */}
-            <div className="bg-white dark:bg-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div className="p-4 rounded-xl bg-gradient-to-tr from-orange-500 to-red-400 shadow-inner animate-pulse">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                    New!
-                  </p>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    This Week
-                  </p>
-                </div>
-              </div>
-              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-orange-500 to-red-400 w-3/5 rounded-full animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        )}
 
 
         {/* Search Section */}
         <div className="mb-8">
-          <SearchBar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onSearchSubmit={handleSearch}
-            loading={loading}
-          />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              placeholder="Keyword (e.g., engineer)"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+            <input
+              type="text"
+              placeholder="Location (e.g., nigeria)"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
         </div>
 
         {/* Main Content */}
@@ -291,7 +176,7 @@ const App: React.FC = () => {
           <FilterSidebar
             filters={filters}
             onFilterChange={handleFilterChange}
-            stats={stats}
+            stats={null}
             isOpen={showFilters}
             onClose={() => setShowFilters(false)}
           />
@@ -310,7 +195,7 @@ const App: React.FC = () => {
                       Searching...
                     </span>
                   ) : (
-                    `${total.toLocaleString()} jobs found`
+                    `${jobs.length} jobs found`
                   )}
                 </div>
               </div>
@@ -327,9 +212,9 @@ const App: React.FC = () => {
 
             {/* Error State */}
             {error && (
-              <ErrorMessage 
-                message={error} 
-                onRetry={() => fetchJobs()}
+              <ErrorMessage
+                message={error}
+                onRetry={() => fetchJobs(keyword.trim() || undefined, location.trim() || undefined)}
               />
             )}
 
@@ -364,12 +249,6 @@ const App: React.FC = () => {
                   </div>
                 )}
 
-                {/* Pagination */}
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
               </>
             )}
           </div>
