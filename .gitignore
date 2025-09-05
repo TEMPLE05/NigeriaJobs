@@ -2,13 +2,19 @@
 node_modules/
 backend/node_modules/
 frontend/node_modules/
+<<<<<<< HEAD
 scraper/node_modules/
+=======
+>>>>>>> 89eb64c6d6785a31b0aad1ae8cef44224dc9c6d3
 
 # Environment files
 .env
 backend/.env
 frontend/.env
+<<<<<<< HEAD
 scraper/.env
+=======
+>>>>>>> 89eb64c6d6785a31b0aad1ae8cef44224dc9c6d3
 
 # Build outputs
 dist/

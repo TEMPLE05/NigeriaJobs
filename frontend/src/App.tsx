@@ -5,14 +5,21 @@ import {
   Moon,
   Sun,
   Briefcase,
+  Building,
+  Users,
+  TrendingUp,
   Menu,
 } from 'lucide-react';
 import { JobCard } from './components/JobCard';
 import { FilterSidebar } from './components/FilterSidebar';
+import { SearchBar } from './components/SearchBar';
+import { Pagination } from './components/Pagination';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
-import { useJobs } from './hooks/useJobs';
+import { useJobs, useStats } from './hooks/useJobs';
+import { JobFilters } from './types/Job';
 
+const JOBS_PER_PAGE = 1; // 👈 adjust number as you like
 
 
 const App: React.FC = () => {
@@ -27,7 +34,8 @@ const App: React.FC = () => {
     source: ''
   });
 
-  const { jobs, loading, error, fetchJobs } = useJobs();
+  const { jobs, loading, error, totalPages, currentPage, total, fetchJobs } = useJobs();
+  const { stats, loading: statsLoading } = useStats();
 
   // Apply dark mode
   useEffect(() => {
@@ -40,12 +48,31 @@ const App: React.FC = () => {
 
   // Initial load
   useEffect(() => {
-  fetchJobs();
+  fetchJobs({ page: 1, limit: JOBS_PER_PAGE });
 }, [fetchJobs]);
 
   const handleSearch = useCallback(() => {
-    fetchJobs(keyword.trim() || undefined, location.trim() || undefined);
-  }, [keyword, location, fetchJobs]);
+    const searchFilters: JobFilters = {
+      page: 1,
+      limit: JOBS_PER_PAGE
+    };
+
+    if (keyword.trim()) {
+      searchFilters.search = keyword.trim();
+    }
+
+    if (location.trim()) {
+      searchFilters.location = location.trim();
+    }
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && key in searchFilters) {
+        (searchFilters as any)[key] = value;
+      }
+    });
+
+    fetchJobs(searchFilters);
+  }, [keyword, location, filters, fetchJobs]);
 
   // Debounced search
   useEffect(() => {
@@ -54,7 +81,7 @@ const App: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [keyword, location, handleSearch]);
+  }, [keyword, location, filters, handleSearch]);
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === 'reset') {
@@ -69,6 +96,29 @@ const App: React.FC = () => {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    const searchFilters: JobFilters = {
+      page,
+      limit: JOBS_PER_PAGE
+    };
+
+    if (keyword.trim()) {
+      searchFilters.search = keyword.trim();
+    }
+
+    if (location.trim()) {
+      searchFilters.location = location.trim();
+    }
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && key in searchFilters) {
+        (searchFilters as any)[key] = value;
+      }
+    });
+
+    fetchJobs(searchFilters);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen transition-all duration-500">
@@ -147,6 +197,90 @@ const App: React.FC = () => {
           </div>
         </div>
 
+        {/* Stats Cards */}
+        {stats && !statsLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
+            {/* Total Jobs */}
+            <div className="bg-white dark:bg-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-4 rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400 shadow-inner">
+                  <Briefcase className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                    {stats.totalJobs.toLocaleString()}
+                  </p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Total Jobs
+                  </p>
+                </div>
+              </div>
+              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-blue-500 to-cyan-400 w-full rounded-full"></div>
+              </div>
+            </div>
+
+            {/* Companies */}
+            <div className="bg-white dark:bg-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-4 rounded-xl bg-gradient-to-tr from-green-500 to-emerald-400 shadow-inner">
+                  <Building className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                    {stats.totalCompanies.toLocaleString()}
+                  </p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Companies
+                  </p>
+                </div>
+              </div>
+              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-green-500 to-emerald-400 w-5/6 rounded-full"></div>
+              </div>
+            </div>
+
+            {/* Categories */}
+            <div className="bg-white dark:bg-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-4 rounded-xl bg-gradient-to-tr from-purple-500 to-pink-400 shadow-inner">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                    {stats.topCategories.length}
+                  </p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Categories
+                  </p>
+                </div>
+              </div>
+              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-purple-500 to-pink-400 w-3/4 rounded-full"></div>
+              </div>
+            </div>
+
+            {/* New This Week */}
+            <div className="bg-white dark:bg-gray-900 shadow-md rounded-2xl p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-4 rounded-xl bg-gradient-to-tr from-orange-500 to-red-400 shadow-inner animate-pulse">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                    New!
+                  </p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    This Week
+                  </p>
+                </div>
+              </div>
+              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-orange-500 to-red-400 w-3/5 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        )}
 
 
         {/* Search Section */}
@@ -176,7 +310,7 @@ const App: React.FC = () => {
           <FilterSidebar
             filters={filters}
             onFilterChange={handleFilterChange}
-            stats={null}
+            stats={stats}
             isOpen={showFilters}
             onClose={() => setShowFilters(false)}
           />
@@ -195,7 +329,7 @@ const App: React.FC = () => {
                       Searching...
                     </span>
                   ) : (
-                    `${jobs.length} jobs found`
+                    `${total.toLocaleString()} jobs found`
                   )}
                 </div>
               </div>
@@ -214,7 +348,7 @@ const App: React.FC = () => {
             {error && (
               <ErrorMessage
                 message={error}
-                onRetry={() => fetchJobs(keyword.trim() || undefined, location.trim() || undefined)}
+                onRetry={() => fetchJobs({ page: 1, limit: JOBS_PER_PAGE })}
               />
             )}
 
@@ -249,6 +383,12 @@ const App: React.FC = () => {
                   </div>
                 )}
 
+                {/* Pagination */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
               </>
             )}
           </div>
@@ -269,7 +409,7 @@ const App: React.FC = () => {
                 </h3>
               </div>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Nigeria's premier job aggregation platform. We collect job postings from multiple sources 
+                Nigeria's premier job aggregation platform. We collect job postings from multiple sources
                 to help you find the perfect opportunity.
               </p>
               <div className="text-sm text-gray-500 dark:text-gray-400">

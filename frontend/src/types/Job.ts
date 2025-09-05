@@ -1,6 +1,7 @@
 export interface Job {
   _id: string;
   title: string;
+<<<<<<< HEAD
   companyName: string;
   companyURL: string;
   jobLocation: string;
@@ -9,6 +10,21 @@ export interface Job {
   keyword: string;
   location: string;
   scrapedAt: string;
+=======
+  company: string;
+  location: string;
+  description: string;
+  salary: string;
+  jobType: 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote';
+  category: string;
+  applicationUrl: string;
+  source: string;
+  datePosted: string;
+  scrapedAt: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+>>>>>>> 89eb64c6d6785a31b0aad1ae8cef44224dc9c6d3
 }
 
 export interface JobFilters {
