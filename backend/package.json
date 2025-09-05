@@ -1,18 +1,11 @@
 {
   "name": "backend",
   "version": "1.0.0",
-<<<<<<< HEAD
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "scrape": "node -e \"require('./src/scrapers/ScrapingController.js'); new (require('./src/scrapers/ScrapingController'))().runAllScrapers();\"",
-=======
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
->>>>>>> 89eb64c6d6785a31b0aad1ae8cef44224dc9c6d3
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
