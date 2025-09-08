@@ -24,6 +24,11 @@ frontend/build/
 scraper-backend/dist/
 
 # ======================
+# Puppeteer cache (large Chrome binaries)
+# ======================
+scraper-backend/.cache/
+
+# ======================
 # Logs
 # ======================
 npm-debug.log*
