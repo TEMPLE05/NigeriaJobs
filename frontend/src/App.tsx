@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
-  Filter,
   Moon,
   Sun,
   Briefcase,
-  Menu,
 } from 'lucide-react';
 import { JobCard } from './components/JobCard';
-import { FilterSidebar } from './components/FilterSidebar';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { useJobs } from './hooks/useJobs';
@@ -19,13 +16,6 @@ const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    jobType: '',
-    location: '',
-    category: '',
-    source: ''
-  });
 
   const { jobs, loading, error, fetchJobs } = useJobs();
 
@@ -40,8 +30,8 @@ const App: React.FC = () => {
 
   // Initial load
   useEffect(() => {
-  fetchJobs();
-}, [fetchJobs]);
+    fetchJobs();
+  }, [fetchJobs]);
 
   const handleSearch = useCallback(() => {
     fetchJobs(keyword.trim() || undefined, location.trim() || undefined);
@@ -56,46 +46,24 @@ const App: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [keyword, location, handleSearch]);
 
-  const handleFilterChange = (key: string, value: string) => {
-    if (key === 'reset') {
-      setFilters({
-        jobType: '',
-        location: '',
-        category: '',
-        source: ''
-      });
-    } else {
-      setFilters(prev => ({ ...prev, [key]: value }));
-    }
-  };
-
 
   return (
-    <div className="min-h-screen transition-all duration-500">
+    <div className="min-h-screen transition-all duration-500" style={{backgroundColor: 'var(--bg-color)'}}>
       {/* Header */}
-      <header className="glassmorphism sticky top-0 z-30">
+      <header className="border-b sticky top-0 z-30 shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowFilters(true)}
-                className="header-mobile-menu"
-                aria-label="Open filters menu"
-              >
-                <Menu className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-              </button>
-              <div className="flex items-center space-x-3">
-                <div className="header-icon-gradient p-3 rounded-xl shadow-lg">
-                  <Briefcase className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    NigeriaJobs
-                  </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-                    Find your dream job
-                  </p>
-                </div>
+            <div className="flex items-center space-x-3">
+              <div className="header-icon-gradient p-3 rounded-xl shadow-lg">
+                <Briefcase className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  NigeriaJobs
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+                  Find your dream job
+                </p>
               </div>
             </div>
 
@@ -116,10 +84,10 @@ const App: React.FC = () => {
         </div>
       </header>
 
+      {/* Hero Section - Constrained */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
         <div className="text-center mb-12 relative">
-          <div className="absolute inset-0 hero-bg-blur rounded-3xl"></div>
+          <div className="absolute inset-0 rounded-3xl opacity-50" style={{background: 'var(--hero-gradient)'}}></div>
           <div className="relative">
             <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-gray-900 dark:text-white">
               Find Your Next
@@ -147,116 +115,138 @@ const App: React.FC = () => {
           </div>
         </div>
 
-
-
-        {/* Search Section */}
+        {/* Search Section - Constrained */}
         <div className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex gap-4">
             <input
               type="text"
-              placeholder="Keyword (e.g., engineer)"
+              placeholder="Search jobs by keyword (e.g., engineer, developer, designer)"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-            <input
-              type="text"
-              placeholder="Location (e.g., nigeria)"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
             />
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex flex-col lg:flex-row gap-8">
-
-          {/* Mobile Filter Sidebar */}
-          <FilterSidebar
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            stats={null}
-            isOpen={showFilters}
-            onClose={() => setShowFilters(false)}
-          />
-
-          {/* Job Results */}
-          <div className="flex-1">
-            <div className="flex justify-between items-center mb-8">
+        {/* Filter Section - Constrained */}
+        <div className="mb-8">
+          <div className="rounded-2xl p-6 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--header-border-color)'}}>
+            <h3 className="text-xl font-bold mb-4" style={{color: 'var(--card-text-color)'}}>Filters</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Job Opportunities
-                </h3>
-                <div className="text-gray-600 dark:text-gray-400 text-lg">
-                  {loading ? (
-                    <span className="flex items-center">
-                      <div className="search-loading-spinner"></div>
-                      Searching...
-                    </span>
-                  ) : (
-                    `${jobs.length} jobs found`
-                  )}
-                </div>
+                <label htmlFor="keyword-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
+                  Search Keywords
+                </label>
+                <input
+                  id="keyword-filter"
+                  type="text"
+                  placeholder="e.g., developer, engineer, designer"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
+                />
               </div>
 
-              <button
-                onClick={() => setShowFilters(true)}
-                className="mobile-filter-button"
-                aria-label="Open filters"
-              >
-                <Filter className="w-5 h-5" />
-                <span>Filters</span>
-              </button>
+              <div>
+                <label htmlFor="location-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
+                  Job Location
+                </label>
+                <input
+                  id="location-filter"
+                  type="text"
+                  placeholder="e.g., lagos, abuja, remote"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
+                />
+              </div>
             </div>
 
-            {/* Error State */}
-            {error && (
-              <ErrorMessage
-                message={error}
-                onRetry={() => fetchJobs(keyword.trim() || undefined, location.trim() || undefined)}
-              />
-            )}
-
-            {/* Loading State */}
-            {loading && <LoadingSpinner />}
-
-            {/* Jobs Grid */}
-            {!loading && !error && (
-              <>
-                {jobs.length > 0 ? (
-                  <div className="grid gap-6 mb-8">
-                    {jobs.map((job, index) => (
-                      <div
-                        key={job._id}
-                        className={`fade-in-up ${index < 5 ? `animation-delay-${index}00` : 'animation-delay-500'}`}
-                      >
-                        <JobCard job={job} />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="text-gray-400 mb-4">
-                      <Search className="w-16 h-16 mx-auto" />
-                    </div>
-                    <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
-                      No jobs found
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Try adjusting your search criteria or filters
-                    </p>
-                  </div>
-                )}
-
-              </>
-            )}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => {
+                  setKeyword('');
+                  setLocation('');
+                }}
+                className="px-6 py-2 rounded-xl font-medium transition-all duration-300" style={{backgroundColor: '#dc2626', color: 'white'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+              >
+                Clear Filters
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Job Results - Full Width */}
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h3 className="text-3xl font-bold mb-2" style={{color: 'var(--card-text-color)'}}>
+            Job Opportunities
+          </h3>
+          <div className="text-lg" style={{color: 'var(--card-secondary-text-color)'}}>
+            {loading ? (
+              <span className="flex items-center">
+                <div className="search-loading-spinner"></div>
+                Searching...
+              </span>
+            ) : (
+              `${jobs.length} jobs found`
+            )}
+          </div>
+        </div>
+
+        {/* Error State */}
+        {error && (
+          <div className="max-w-7xl mx-auto">
+            <ErrorMessage
+              message={error}
+              onRetry={() => {
+                fetchJobs(keyword.trim() || undefined, location.trim() || undefined);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="max-w-7xl mx-auto">
+            <LoadingSpinner />
+          </div>
+        )}
+
+        {/* Jobs Grid - Full Width */}
+        {!loading && !error && (
+          <>
+            {jobs.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-8">
+                {jobs.map((job, index) => (
+                  <div
+                    key={job._id}
+                    className={`fade-in-up ${index < 5 ? `animation-delay-${index}00` : 'animation-delay-500'}`}
+                  >
+                    <JobCard job={job} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <Search className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-xl font-medium mb-2" style={{color: 'var(--card-text-color)'}}>
+                  No jobs found
+                </h3>
+                <p style={{color: 'var(--card-secondary-text-color)'}}>
+                  Try adjusting your search criteria or filters
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-16">
+      <footer className="border-t mt-16" style={{backgroundColor: 'var(--footer-bg-color)', borderColor: 'var(--footer-border-color)'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
@@ -298,7 +288,7 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-8 mt-8">
+          <div className="border-t pt-8 mt-8" style={{borderColor: 'var(--footer-border-color)'}}>
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-500 dark:text-gray-400 text-sm">
                 © 2025 NigeriaJobs. All rights reserved.

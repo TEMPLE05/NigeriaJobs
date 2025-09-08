@@ -13,7 +13,8 @@ router.get('/', async (req, res) => {
       category,
       jobType,
       search,
-      company
+      company,
+      dateRange
     } = req.query;
 
     const query = { isActive: true };
@@ -24,12 +25,40 @@ router.get('/', async (req, res) => {
     if (jobType && jobType !== '') query.jobType = jobType;
     if (company && company !== '') query.company = new RegExp(company, 'i');
 
+    // Add date range filter
+    if (dateRange && dateRange !== '') {
+      const now = new Date();
+      let startDate;
+
+      switch (dateRange) {
+        case '1day':
+          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case '7days':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30days':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90days':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          break;
+      }
+
+      if (startDate) {
+        query.datePosted = { $gte: startDate };
+      }
+    }
+
     // Add search functionality
     if (search && search.trim()) {
       query.$or = [
         { title: new RegExp(search, 'i') },
         { company: new RegExp(search, 'i') },
-        { description: new RegExp(search, 'i') }
+        { description: new RegExp(search, 'i') },
+        { location: new RegExp(search, 'i') }
       ];
     }
 

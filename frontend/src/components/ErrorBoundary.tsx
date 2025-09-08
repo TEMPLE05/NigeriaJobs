@@ -25,8 +25,8 @@ class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
-          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
+        <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center px-4">
+          <div className="max-w-md w-full bg-white dark:bg-black rounded-lg shadow-lg p-6 text-center border border-gray-200 dark:border-white">
             <div className="text-6xl mb-4">😵</div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Something went wrong
@@ -45,7 +45,7 @@ class ErrorBoundary extends Component<Props, State> {
                 <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400">
                   Error Details (Development)
                 </summary>
-                <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto">
+                <pre className="mt-2 text-xs bg-gray-100 dark:bg-black p-2 rounded overflow-auto border border-gray-200 dark:border-white">
                   {this.state.error.toString()}
                 </pre>
               </details>

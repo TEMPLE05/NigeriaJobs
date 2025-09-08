@@ -7,7 +7,7 @@ interface ErrorMessageProps {
 }
 
 export const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, onRetry }) => (
-  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+  <div className="bg-red-50 dark:bg-black border border-red-200 dark:border-white rounded-lg p-4">
     <div className="flex items-center">
       <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
       <div className="flex-1">

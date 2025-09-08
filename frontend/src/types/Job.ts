@@ -1,5 +1,5 @@
 export interface Job {
-  _id: string;
+  _id?: string;
   title: string;
   companyName: string;
   companyURL: string;
@@ -19,6 +19,7 @@ export interface JobFilters {
   jobType?: string;
   search?: string;
   company?: string;
+  dateRange?: string;
 }
 
 export interface JobResponse {

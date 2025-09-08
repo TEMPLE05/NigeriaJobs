@@ -51,8 +51,7 @@ export const PaginatedJobs: React.FC<PaginatedJobsProps> = ({ jobs, jobsPerPage 
         {currentJobs.map((job, idx) => (
           <div
             key={getKey(job, idx)}
-            className="fade-in-up"
-            style={{ animationDelay: `${idx * 0.08}s` }}
+            className={`fade-in-up animation-delay-${idx * 80}`}
           >
             <JobCard job={job} />
           </div>
