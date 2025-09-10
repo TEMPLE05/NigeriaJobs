@@ -1,41 +1,124 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import {
   Search,
   Moon,
   Sun,
   Briefcase,
+  Trash2,
+  Monitor,
 } from 'lucide-react';
-import { JobCard } from './components/JobCard';
-import { LoadingSpinner } from './components/LoadingSpinner';
-import { ErrorMessage } from './components/ErrorMessage';
 import { useJobs } from './hooks/useJobs';
+import { jobsApi } from './services/api';
+
+// Lazy load components for better performance
+const JobCard = lazy(() => import('./components/JobCard').then(module => ({ default: module.JobCard })));
+const LoadingSpinner = lazy(() => import('./components/LoadingSpinner').then(module => ({ default: module.LoadingSpinner })));
+const ErrorMessage = lazy(() => import('./components/ErrorMessage').then(module => ({ default: module.ErrorMessage })));
+const Pagination = lazy(() => import('./components/Pagination').then(module => ({ default: module.Pagination })));
 
 
 
 const App: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { jobs, loading, error, fetchJobs } = useJobs();
+  // Theme management with system preference detection
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+  const [isDark, setIsDark] = useState(false);
 
-  // Apply dark mode
+  const { jobs, loading, error, pagination, fetchJobs } = useJobs();
+
+  // System theme detection
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const updateTheme = () => {
+      const systemPrefersDark = mediaQuery.matches;
+      const shouldBeDark = theme === 'dark' || (theme === 'system' && systemPrefersDark);
+
+      setIsDark(shouldBeDark);
+
+      if (shouldBeDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    // Load saved theme preference
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
     }
-  }, [darkMode]);
+
+    // Initial theme application
+    updateTheme();
+
+    // Listen for system theme changes
+    mediaQuery.addEventListener('change', updateTheme);
+
+    return () => mediaQuery.removeEventListener('change', updateTheme);
+  }, [theme]);
+
+  // Theme toggle function
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
+  // Get theme icon
+  const getThemeIcon = () => {
+    if (theme === 'light') return <Sun className="w-5 h-5 text-yellow-500" />;
+    if (theme === 'dark') return <Moon className="w-5 h-5 text-blue-400" />;
+    return <Monitor className="w-5 h-5 text-gray-400" />;
+  };
+
+  // Get theme tooltip
+  const getThemeTooltip = () => {
+    if (theme === 'light') return "Switch to dark mode";
+    if (theme === 'dark') return "Use system preference";
+    return "Switch to light mode";
+  };
 
   // Initial load
   useEffect(() => {
-    fetchJobs();
+    fetchJobs(undefined, undefined, 1, 8);
   }, [fetchJobs]);
 
   const handleSearch = useCallback(() => {
-    fetchJobs(keyword.trim() || undefined, location.trim() || undefined);
+    setCurrentPage(1); // Reset to first page when searching
+    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, 1, 8);
   }, [keyword, location, fetchJobs]);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, page, 8);
+  }, [keyword, location, fetchJobs]);
+
+  const handleCleanup = async () => {
+    if (cleanupLoading) return;
+
+    setCleanupLoading(true);
+    setCleanupMessage(null);
+
+    try {
+      const result = await jobsApi.triggerCleanup();
+      setCleanupMessage(`✅ ${result.message}`);
+      // Refresh jobs after cleanup
+      setCurrentPage(1);
+      fetchJobs(keyword.trim() || undefined, location.trim() || undefined, 1, 8);
+    } catch (error) {
+      setCleanupMessage(`❌ Failed to cleanup: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setCleanupLoading(false);
+      // Clear message after 5 seconds
+      setTimeout(() => setCleanupMessage(null), 5000);
+    }
+  };
 
   // Debounced search
   useEffect(() => {
@@ -69,15 +152,11 @@ const App: React.FC = () => {
 
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="dark-mode-toggle"
-                title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                onClick={toggleTheme}
+                className="w-12 h-12 rounded-full bg-transparent hover:bg-white/10 text-white flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-white/20 hover:border-white/40"
+                title={getThemeTooltip()}
               >
-                {darkMode ? (
-                  <Sun className="w-5 h-5 text-yellow-500" />
-                ) : (
-                  <Moon className="w-5 h-5 text-gray-600" />
-                )}
+                {getThemeIcon()}
               </button>
             </div>
           </div>
@@ -87,7 +166,7 @@ const App: React.FC = () => {
       {/* Hero Section - Constrained */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12 relative">
-          <div className="absolute inset-0 rounded-3xl opacity-50" style={{background: 'var(--hero-gradient)'}}></div>
+          <div className="absolute inset-0 rounded-3xl opacity-30" style={{background: 'var(--hero-gradient)'}}></div>
           <div className="relative">
             <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-gray-900 dark:text-white">
               Find Your Next
@@ -130,7 +209,7 @@ const App: React.FC = () => {
 
         {/* Filter Section - Constrained */}
         <div className="mb-8">
-          <div className="rounded-2xl p-6 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--header-border-color)'}}>
+          <div className="rounded-2xl p-6 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--filter-border-color)', boxShadow: 'var(--filter-shadow)'}}>
             <h3 className="text-xl font-bold mb-4" style={{color: 'var(--card-text-color)'}}>Filters</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -162,16 +241,41 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => {
-                  setKeyword('');
-                  setLocation('');
-                }}
-                className="px-6 py-2 rounded-xl font-medium transition-all duration-300" style={{backgroundColor: '#dc2626', color: 'white'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-              >
-                Clear Filters
-              </button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-4">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleCleanup}
+                  disabled={cleanupLoading}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+                >
+                  {cleanupLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  <span>{cleanupLoading ? 'Cleaning...' : 'Clean Old Jobs'}</span>
+                </button>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Remove jobs older than 7 days
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                {cleanupMessage && (
+                  <div className="text-sm font-medium px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border">
+                    {cleanupMessage}
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setKeyword('');
+                    setLocation('');
+                  }}
+                  className="px-6 py-2 rounded-xl font-medium transition-all duration-300" style={{backgroundColor: '#dc2626', color: 'white'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                >
+                  Clear Filters
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -190,7 +294,9 @@ const App: React.FC = () => {
                 Searching...
               </span>
             ) : (
-              `${jobs.length} jobs found`
+              pagination ?
+                `Showing ${jobs.length} of ${pagination.totalJobs} jobs (Page ${pagination.currentPage} of ${pagination.totalPages})` :
+                `${jobs.length} jobs found`
             )}
           </div>
         </div>
@@ -198,19 +304,23 @@ const App: React.FC = () => {
         {/* Error State */}
         {error && (
           <div className="max-w-7xl mx-auto">
-            <ErrorMessage
-              message={error}
-              onRetry={() => {
-                fetchJobs(keyword.trim() || undefined, location.trim() || undefined);
-              }}
-            />
+            <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg"></div>}>
+              <ErrorMessage
+                message={error}
+                onRetry={() => {
+                  fetchJobs(keyword.trim() || undefined, location.trim() || undefined, currentPage, 8);
+                }}
+              />
+            </Suspense>
           </div>
         )}
 
         {/* Loading State */}
         {loading && (
           <div className="max-w-7xl mx-auto">
-            <LoadingSpinner />
+            <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg"></div>}>
+              <LoadingSpinner />
+            </Suspense>
           </div>
         )}
 
@@ -224,7 +334,9 @@ const App: React.FC = () => {
                     key={job._id}
                     className={`fade-in-up ${index < 5 ? `animation-delay-${index}00` : 'animation-delay-500'}`}
                   >
-                    <JobCard job={job} />
+                    <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-2xl"></div>}>
+                      <JobCard job={job} />
+                    </Suspense>
                   </div>
                 ))}
               </div>
@@ -240,6 +352,19 @@ const App: React.FC = () => {
                   Try adjusting your search criteria or filters
                 </p>
               </div>
+            )}
+
+            {/* Pagination */}
+            {pagination && (
+              <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-12 rounded-lg"></div>}>
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  hasNextPage={pagination.hasNextPage}
+                  hasPrevPage={pagination.hasPrevPage}
+                  onPageChange={handlePageChange}
+                />
+              </Suspense>
             )}
           </>
         )}

@@ -4,6 +4,39 @@ const Job = require('./model/job');
 
 puppeteerExtra.use(pluginStealth());
 
+// Helper functions for data processing
+function classifyJobType(duration, title, location) {
+    const text = (duration + ' ' + title + ' ' + location).toLowerCase();
+
+    if (text.includes('contract') || text.includes('temporary')) return 'Contract';
+    if (text.includes('part') || text.includes('part-time')) return 'Part-time';
+    if (text.includes('freelance') || text.includes('freelancer')) return 'Freelance';
+    if (text.includes('internship') || text.includes('intern')) return 'Internship';
+    if (text.includes('full') || text.includes('full-time')) return 'Full-time';
+
+    // Default classification based on common patterns
+    return 'Full-time';
+}
+
+function extractSalary(text) {
+    if (!text) return null;
+
+    // Look for salary patterns like "₦100,000 - ₦200,000" or "$50,000 - $70,000"
+    const salaryPatterns = [
+        /₦[\d,]+(?:\s*-\s*₦[\d,]+)?(?:\s*per\s*(?:year|month|hour|week))?/i,
+        /\$[\d,]+(?:\s*-\s*\$[\d,]+)?(?:\s*per\s*(?:year|month|hour|week))?/i,
+        /£[\d,]+(?:\s*-\s*£[\d,]+)?(?:\s*per\s*(?:year|month|hour|week))?/i,
+        /€[\d,]+(?:\s*-\s*€[\d,]+)?(?:\s*per\s*(?:year|month|hour|week))?/i
+    ];
+
+    for (const pattern of salaryPatterns) {
+        const match = text.match(pattern);
+        if (match) return match[0].trim();
+    }
+
+    return null;
+}
+
 async function createBrowser() {
     return await puppeteerExtra.launch({ headless: true });
 }
@@ -30,17 +63,40 @@ async function scrapeIndeed(page, keyword, location) {
                 companyName: e.querySelector('[data-testid=company-name]')?.innerText || 'N/A',
                 companyURL: e.querySelector('.base-search-card__subtitle a')?.href || 'N/A',
                 jobLocation: e.querySelector('[data-testid=text-location]')?.innerText || 'N/A',
-                jobDuration: e.querySelector('[data-testid=myJobsStateDate]')?.innerText || 'N/A',
+                jobDuration: e.querySelector('[data-testid=myJobsStateDate]')?.innerText ||
+                           e.querySelector('time')?.innerText ||
+                           e.querySelector('.job-search-card__time')?.innerText ||
+                           'N/A',
                 jobURL: e.querySelector('a')?.href || 'N/A',
+                salary: e.querySelector('[data-testid=salary-snippet]')?.innerText || null,
             }))
         );
 
-        // Save jobs to database
-        jobs.forEach(async (job) => {
+        // Save jobs to database with deduplication
+        for (const job of jobs) {
             job.keyword = keyword;
             job.location = location;
-            await new Job(job).save();
-        });
+            job.source = 'LinkedIn';
+            job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
+            job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+            // Use upsert to prevent duplicates and update scrapedAt
+            await Job.findOneAndUpdate(
+                {
+                    title: job.title,
+                    companyName: job.companyName,
+                    jobLocation: job.jobLocation
+                },
+                {
+                    ...job,
+                    scrapedAt: new Date() // Always update the scraped date
+                },
+                {
+                    upsert: true,
+                    new: true
+                }
+            );
+        }
         const NumberOfJobs = jobs.length;
         console.log(`${NumberOfJobs} ${keyword} jobs scraped from indeed`);
         return jobs;
@@ -72,17 +128,40 @@ async function scrapeLinkedIn(page, keyword, location) {
                 companyName: e.querySelector('.base-search-card__subtitle a')?.innerText || 'N/A',
                 companyURL: e.querySelector('.base-search-card__subtitle a')?.href || 'N/A',
                 jobLocation: e.querySelector('.job-search-card__location')?.innerText || 'N/A',
-                jobDuration: e.querySelector('time')?.innerText || 'N/A',
+                jobDuration: e.querySelector('time')?.innerText ||
+                           e.querySelector('[data-testid=myJobsStateDate]')?.innerText ||
+                           e.querySelector('.job-search-card__time')?.innerText ||
+                           'N/A',
                 jobURL: e.querySelector('a.base-card__full-link')?.href || 'N/A',
+                salary: e.querySelector('.job-search-card__salary-info')?.innerText || null,
             }))
         );
 
-        // Save jobs to database
-        jobs.forEach(async (job) => {
+        // Save jobs to database with deduplication
+        for (const job of jobs) {
             job.keyword = keyword;
             job.location = location;
-            await new Job(job).save();
-        });
+            job.source = 'Indeed';
+            job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
+            job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+            // Use upsert to prevent duplicates and update scrapedAt
+            await Job.findOneAndUpdate(
+                {
+                    title: job.title,
+                    companyName: job.companyName,
+                    jobLocation: job.jobLocation
+                },
+                {
+                    ...job,
+                    scrapedAt: new Date() // Always update the scraped date
+                },
+                {
+                    upsert: true,
+                    new: true
+                }
+            );
+        }
 
         const NumberOfJobs = jobs.length;
         console.log(`${NumberOfJobs} ${keyword} jobs scraped from LinkedIn`);
@@ -115,17 +194,40 @@ async function scrapeJobberman(page, keyword, location) {
                 companyName: e.querySelector('.text-loading-animate-link')?.innerText || 'N/A',
                 companyURL: e.querySelector('.text-loading-animate-link')?.href || 'N/A',
                 jobLocation: e.querySelector('.text-loading-hide')?.innerText || 'N/A',
-                jobDuration: e.querySelector('p .text-loading-animate')?.innerText || 'N/A',
+                jobDuration: e.querySelector('p .text-loading-animate')?.innerText ||
+                           e.querySelector('[data-cy=job-date]')?.innerText ||
+                           e.querySelector('.job-date')?.innerText ||
+                           'N/A',
                 jobURL: e.querySelector('[data-cy=listing-title-link]')?.href || 'N/A',
+                salary: e.querySelector('[data-cy=salary-range]')?.innerText || null,
             }))
         );
 
-        // Save jobs to database
-        jobs.forEach(async (job) => {
+        // Save jobs to database with deduplication
+        for (const job of jobs) {
             job.keyword = keyword;
             job.location = location;
-            await new Job(job).save();
-        });
+            job.source = 'Jobberman';
+            job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
+            job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+            // Use upsert to prevent duplicates and update scrapedAt
+            await Job.findOneAndUpdate(
+                {
+                    title: job.title,
+                    companyName: job.companyName,
+                    jobLocation: job.jobLocation
+                },
+                {
+                    ...job,
+                    scrapedAt: new Date() // Always update the scraped date
+                },
+                {
+                    upsert: true,
+                    new: true
+                }
+            );
+        }
 
         const NumberOfJobs = jobs.length;
         console.log(`${NumberOfJobs} ${keyword} jobs scraped from Jobberman`);
@@ -137,17 +239,28 @@ async function scrapeJobberman(page, keyword, location) {
 }
 
 async function scrapeAllPlatforms(keyword, location) {
-    const browser = await createBrowser();  
+    const browser = await createBrowser();
     try {
         const pageIndeed = await browser.newPage();
         const pageLinkedIn = await browser.newPage();
         const pageJobberman = await browser.newPage();
 
-        const [indeedJobs, linkedInJobs, jobbermanJobs] = await Promise.all([
-            scrapeIndeed(pageIndeed, keyword, location),
-            scrapeLinkedIn(pageLinkedIn, keyword, location),
-            scrapeJobberman(pageJobberman, keyword, location)
-        ]);
+        // Add delays between requests to avoid rate limiting
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Scrape platforms sequentially with delays to avoid overwhelming servers
+        console.log(`Starting scrape for ${keyword} in ${location}`);
+
+        const indeedJobs = await scrapeIndeed(pageIndeed, keyword, location);
+        await delay(2000); // 2 second delay
+
+        const linkedInJobs = await scrapeLinkedIn(pageLinkedIn, keyword, location);
+        await delay(2000); // 2 second delay
+
+        const jobbermanJobs = await scrapeJobberman(pageJobberman, keyword, location);
+
+        const totalJobs = indeedJobs.length + linkedInJobs.length + jobbermanJobs.length;
+        console.log(`Completed scraping ${totalJobs} jobs for ${keyword} in ${location}`);
 
         return [...indeedJobs, ...linkedInJobs, ...jobbermanJobs];
     } catch (error) {
