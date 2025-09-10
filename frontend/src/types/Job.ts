@@ -8,6 +8,9 @@ export interface Job {
   jobURL: string;
   keyword: string;
   location: string;
+  source?: string;        // NEW: Platform source (Indeed, LinkedIn, Jobberman)
+  jobType?: string;       // NEW: Full-time, Part-time, Contract, etc.
+  salary?: string;        // NEW: Salary information if available
   scrapedAt: string;
 }
 
@@ -24,9 +27,13 @@ export interface JobFilters {
 
 export interface JobResponse {
   jobs: Job[];
-  totalPages: number;
-  currentPage: number;
-  total: number;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalJobs: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 export interface JobStats {
