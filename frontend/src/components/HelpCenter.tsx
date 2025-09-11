@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Briefcase, Sun, Moon, Monitor } from 'lucide-react';
 
 const HelpCenter: React.FC = () => {
   // Theme management (simplified for this page)
   const theme = 'system'; // Default to system
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const getThemeIcon = () => {
     return <Monitor className="w-5 h-5 text-gray-400" />;
