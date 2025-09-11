@@ -7,6 +7,11 @@ const ContactUs: React.FC = () => {
   useEffect(() => {
     document.title = 'About Me - NigeriaJobs';
   }, []);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <div className="min-h-screen flex flex-col transition-all duration-500" style={{backgroundColor: 'var(--bg-color)'}}>
       {/* Header */}
