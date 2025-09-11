@@ -32,7 +32,7 @@ function getCache(key) {
 }
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(compression()); // Enable gzip compression for better performance

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
   Search,
   Moon,
@@ -9,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useJobs } from './hooks/useJobs';
 import { jobsApi } from './services/api';
+import PopulateJobs from './components/PopulateJobs';
+import HelpCenter from './components/HelpCenter';
+import ContactUs from './components/ContactUs';
 
 // Lazy load components for better performance
 const JobCard = lazy(() => import('./components/JobCard').then(module => ({ default: module.JobCard })));
@@ -63,11 +67,20 @@ const App: React.FC = () => {
     return () => mediaQuery.removeEventListener('change', updateTheme);
   }, [theme]);
 
-  // Theme toggle function
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+  // Theme set functions
+  const setLightTheme = () => {
+    setTheme('light');
+    localStorage.setItem('theme', 'light');
+  };
+
+  const setDarkTheme = () => {
+    setTheme('dark');
+    localStorage.setItem('theme', 'dark');
+  };
+
+  const setSystemTheme = () => {
+    setTheme('system');
+    localStorage.setItem('theme', 'system');
   };
 
   // Get theme icon
@@ -131,11 +144,13 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen transition-all duration-500" style={{backgroundColor: 'var(--bg-color)'}}>
+    <Routes>
+      <Route path="/" element={
+        <div className="min-h-screen flex flex-col transition-all duration-500" style={{backgroundColor: 'var(--bg-color)'}}>
       {/* Header */}
-      <header className="border-b sticky top-0 z-30 shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
+      <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-center items-center h-16">
             <div className="flex items-center space-x-3">
               <div className="header-icon-gradient p-3 rounded-xl shadow-lg">
                 <Briefcase className="w-6 h-6 text-white" />
@@ -150,18 +165,12 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={toggleTheme}
-                className="w-12 h-12 rounded-full bg-transparent hover:bg-white/10 text-white flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-white/20 hover:border-white/40"
-                title={getThemeTooltip()}
-              >
-                {getThemeIcon()}
-              </button>
-            </div>
           </div>
         </div>
       </header>
+
+      {/* Main Content */}
+      <main className="flex-grow overflow-y-auto">
 
       {/* Hero Section - Constrained */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -369,74 +378,76 @@ const App: React.FC = () => {
           </>
         )}
       </div>
+      </main>
 
       {/* Footer */}
-      <footer className="border-t mt-16" style={{backgroundColor: 'var(--footer-bg-color)', borderColor: 'var(--footer-border-color)'}}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="footer-icon-gradient p-2 rounded-lg">
-                  <Briefcase className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+      <footer className="flex-shrink-0 border-t" style={{backgroundColor: 'var(--footer-bg-color)', borderColor: 'var(--footer-border-color)'}}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="footer-icon-gradient p-1.5 rounded-lg">
+                <Briefcase className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                   NigeriaJobs
                 </h3>
-              </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Nigeria's premier job aggregation platform. We collect job postings from multiple sources 
-                to help you find the perfect opportunity.
-              </p>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Jobs updated daily from trusted sources
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Job aggregation platform
+                </p>
               </div>
             </div>
 
-            <div>
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-                <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400">Browse Jobs</a></li>
-                <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400">Companies</a></li>
-                <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400">Salary Guide</a></li>
-                <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400">Career Tips</a></li>
-              </ul>
+            <div className="flex items-center space-x-6">
+              <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                Browse Jobs
+              </Link>
+              <Link to="/help" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                Help
+              </Link>
+              <Link to="/contact" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                About
+              </Link>
             </div>
 
-            <div>
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-                <li><button className="hover:text-blue-600 dark:hover:text-blue-400 text-left">Help Center</button></li>
-                <li><button className="hover:text-blue-600 dark:hover:text-blue-400 text-left">Contact Us</button></li>
-                <li><button className="hover:text-blue-600 dark:hover:text-blue-400 text-left">Privacy Policy</button></li>
-                <li><button className="hover:text-blue-600 dark:hover:text-blue-400 text-left">Terms of Service</button></li>
-              </ul>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={setLightTheme}
+                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'light' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                title="Light mode"
+              >
+                <Sun className="w-5 h-5" />
+              </button>
+              <button
+                onClick={setDarkTheme}
+                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'dark' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                title="Dark mode"
+              >
+                <Moon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={setSystemTheme}
+                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'system' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                title="System mode"
+              >
+                <Monitor className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
-          <div className="border-t pt-8 mt-8" style={{borderColor: 'var(--footer-border-color)'}}>
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                © 2025 NigeriaJobs. All rights reserved.
-              </p>
-              <div className="flex space-x-6 mt-4 md:mt-0">
-                <button className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
-                  <span className="sr-only">Twitter</span>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
-                  </svg>
-                </button>
-                <button className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
-                  <span className="sr-only">LinkedIn</span>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.338 16.338H13.67V12.16c0-.995-.017-2.277-1.387-2.277-1.39 0-1.601 1.086-1.601 2.207v4.248H8.014v-8.59h2.559v1.174h.037c.356-.675 1.227-1.387 2.526-1.387 2.703 0 3.203 1.778 3.203 4.092v4.711zM5.005 6.575a1.548 1.548 0 11-.003-3.096 1.548 1.548 0 01.003 3.096zm-1.337 9.763H6.34v-8.59H3.667v8.59zM17.668 1H2.328C1.595 1 1 1.581 1 2.298v15.403C1 18.418 1.595 19 2.328 19h15.34c.734 0 1.332-.582 1.332-1.299V2.298C19 1.581 18.402 1 17.668 1z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+          <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+              © 2025 NigeriaJobs. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
-    </div>
+        </div>
+      } />
+      <Route path="/populate-jobs" element={<PopulateJobs />} />
+      <Route path="/help" element={<HelpCenter />} />
+      <Route path="/contact" element={<ContactUs />} />
+    </Routes>
   );
 };
 
