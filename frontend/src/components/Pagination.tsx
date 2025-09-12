@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PaginationProps {
@@ -19,6 +19,41 @@ export const Pagination: React.FC<PaginationProps> = ({
   // Calculate hasNextPage and hasPrevPage if not provided
   const calculatedHasNextPage = hasNextPage !== undefined ? hasNextPage : currentPage < totalPages;
   const calculatedHasPrevPage = hasPrevPage !== undefined ? hasPrevPage : currentPage > 1;
+
+  // Swipe functionality
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const paginationRef = useRef<HTMLDivElement>(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    // Swipe left: next page
+    if (isLeftSwipe && calculatedHasNextPage) {
+      onPageChange(currentPage + 1);
+    }
+
+    // Swipe right: previous page
+    if (isRightSwipe && calculatedHasPrevPage) {
+      onPageChange(currentPage - 1);
+    }
+  };
 
   if (totalPages <= 1) return null;
 
@@ -44,7 +79,13 @@ export const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-center space-x-2 mt-8">
+    <div
+      ref={paginationRef}
+      className="flex items-center justify-center space-x-2 mt-8"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Previous Button */}
       <button
         onClick={() => onPageChange(currentPage - 1)}
