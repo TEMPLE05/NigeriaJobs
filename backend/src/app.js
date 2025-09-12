@@ -25,6 +25,26 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/scraper', require('./routes/scraper'));
 
+// DELETE /api/cleanup - Remove old jobs (older than 7 days)
+app.delete('/api/cleanup', async (req, res) => {
+  try {
+    const Job = require('./models/Job');
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const result = await Job.deleteMany({
+      datePosted: { $lt: sevenDaysAgo }
+    });
+
+    res.json({
+      message: `Successfully deleted ${result.deletedCount} old jobs`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Error cleaning up old jobs:', error);
+    res.status(500).json({ error: 'Failed to cleanup old jobs' });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Job Aggregator API is running' });
