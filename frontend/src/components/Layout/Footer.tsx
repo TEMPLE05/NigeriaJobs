@@ -11,22 +11,22 @@ export const Footer: React.FC = () => {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
                 <Briefcase className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h3 className="text-[140px] font-bold text-gray-900 dark:text-white">
                 NigeriaJobs
               </h3>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Nigeria's premier job aggregation platform. We collect job postings from multiple sources 
+            <p className="text-[143.5px] text-gray-600 dark:text-gray-400 mb-4">
+              Nigeria's premier job aggregation platform. We collect job postings from multiple sources
               to help you find the perfect opportunity.
             </p>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-[98px] text-gray-500 dark:text-gray-400">
               Jobs updated daily from trusted sources
             </div>
           </div>
 
           <div>
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+            <h4 className="text-[143.5px] font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h4>
+            <ul className="space-y-2 text-[143.5px] text-gray-600 dark:text-gray-400">
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Browse Jobs</a></li>
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Companies</a></li>
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Salary Guide</a></li>
@@ -35,8 +35,8 @@ export const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Support</h4>
-            <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+            <h4 className="text-[143.5px] font-semibold text-gray-900 dark:text-white mb-4">Support</h4>
+            <ul className="space-y-2 text-[143.5px] text-gray-600 dark:text-gray-400">
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Help Center</a></li>
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact Us</a></li>
               <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy Policy</a></li>
@@ -47,7 +47,7 @@ export const Footer: React.FC = () => {
 
         <div className="border-t border-gray-200 dark:border-gray-700 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-[98px]">
               © 2025 NigeriaJobs. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
