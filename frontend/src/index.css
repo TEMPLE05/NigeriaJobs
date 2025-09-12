@@ -56,18 +56,18 @@ body {
   @apply font-sans antialiased;
   background-color: var(--bg-color);
   min-height: 100vh;
-  zoom: 0.74;
-  -moz-transform: scale(0.74);
+  zoom: 0.80;
+  -moz-transform: scale(0.80);
   -moz-transform-origin: 0 0;
-  -webkit-transform: scale(0.74);
+  -webkit-transform: scale(0.80);
   -webkit-transform-origin: 0 0;
-  transform: scale(0.74);
+  transform: scale(0.80);
   transform-origin: 0 0;
-  width: 135.14%; /* 100% / 0.74 */
-  height: 135.14%; /* 100% / 0.74 */
+  width: 125%; /* 100% / 0.80 */
+  height: 125%; /* 100% / 0.80 */
 
-  /* Typography adjustments for 74% zoom */
-  font-size: 20.5px; /* Increased by 2.5px from 18px for better readability */
+  /* Typography adjustments for 80% zoom */
+  font-size: 24px; /* Increased from 20.5px for better readability */
   line-height: 1.6; /* Improved line height for better readability */
   letter-spacing: 0.025em; /* Slight letter spacing for better legibility */
 }
@@ -206,10 +206,10 @@ input, textarea, select {
   line-height: 1.5;
 }
 
-/* Responsive typography adjustments for 73.5% zoom */
+/* Responsive typography adjustments for 80% zoom */
 @media (max-width: 768px) {
   body {
-    font-size: 17px; /* Slightly smaller on mobile for better fit */
+    font-size: 20px; /* Slightly smaller on mobile for better fit */
     line-height: 1.5;
   }
 
@@ -220,7 +220,7 @@ input, textarea, select {
 
 @media (min-width: 769px) and (max-width: 1024px) {
   body {
-    font-size: 17.5px; /* Medium screens */
+    font-size: 20.5px; /* Medium screens */
     line-height: 1.55;
   }
 
@@ -231,7 +231,7 @@ input, textarea, select {
 
 @media (min-width: 1025px) {
   body {
-    font-size: 18px; /* Desktop screens */
+    font-size: 21px; /* Desktop screens */
     line-height: 1.6;
   }
 
