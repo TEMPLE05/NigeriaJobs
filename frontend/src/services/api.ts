@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 120000, // Increased to 2 minutes for Render free tier cold starts and scraping operations
 });
 
 export const jobsApi = {
