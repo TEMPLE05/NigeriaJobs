@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
-  Search,
   Moon,
   Sun,
   Briefcase,
   Trash2,
   Monitor,
+  FileSearch,
 } from 'lucide-react';
 import { useJobs } from './hooks/useJobs';
 import { jobsApi } from './services/api';
@@ -357,7 +357,7 @@ const App: React.FC = () => {
             ) : (
               <div className="text-center py-12">
                 <div className="text-gray-400 mb-4">
-                  <Search className="w-16 h-16 mx-auto" />
+                  <FileSearch className="w-16 h-16 mx-auto" />
                 </div>
                 <h3 className="text-xl font-medium mb-2" style={{color: 'var(--card-text-color)'}}>
                   No jobs found
