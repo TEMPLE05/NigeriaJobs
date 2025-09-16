@@ -37,6 +37,22 @@ function extractSalary(text) {
     return null;
 }
 
+function validateJobURL(jobURL, source) {
+    if (!jobURL || jobURL === 'N/A') return false;
+
+    const url = jobURL.toLowerCase();
+    switch (source) {
+        case 'Indeed':
+            return url.includes('indeed.com');
+        case 'LinkedIn':
+            return url.includes('linkedin.com');
+        case 'Jobberman':
+            return url.includes('jobberman.com');
+        default:
+            return true; // Allow unknown sources
+    }
+}
+
 async function createBrowser() {
     return await puppeteerExtra.launch({ headless: true });
 }
@@ -76,9 +92,15 @@ async function scrapeIndeed(page, keyword, location) {
         for (const job of jobs) {
             job.keyword = keyword;
             job.location = location;
-            job.source = 'LinkedIn';
+            job.source = 'Indeed';
             job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
             job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+            // Validate job URL matches the source platform
+            if (!validateJobURL(job.jobURL, job.source)) {
+                console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
+                continue;
+            }
 
             // Use upsert to prevent duplicates and update scrapedAt
             await Job.findOneAndUpdate(
@@ -141,9 +163,15 @@ async function scrapeLinkedIn(page, keyword, location) {
         for (const job of jobs) {
             job.keyword = keyword;
             job.location = location;
-            job.source = 'Indeed';
+            job.source = 'LinkedIn';
             job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
             job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+            // Validate job URL matches the source platform
+            if (!validateJobURL(job.jobURL, job.source)) {
+                console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
+                continue;
+            }
 
             // Use upsert to prevent duplicates and update scrapedAt
             await Job.findOneAndUpdate(
@@ -210,6 +238,12 @@ async function scrapeJobberman(page, keyword, location) {
             job.source = 'Jobberman';
             job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
             job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+            // Validate job URL matches the source platform
+            if (!validateJobURL(job.jobURL, job.source)) {
+                console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
+                continue;
+            }
 
             // Use upsert to prevent duplicates and update scrapedAt
             await Job.findOneAndUpdate(

@@ -19,6 +19,13 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
     return date.toLocaleDateString();
   };
 
+  // Helper function to get display source (swapped for Indeed/LinkedIn)
+  const getDisplaySource = (source: string) => {
+    if (source === 'Indeed') return 'LinkedIn';
+    if (source === 'LinkedIn') return 'Indeed';
+    return source;
+  };
+
   // Helper function to determine job level
   const getJobLevel = (title: string) => {
     const lowerTitle = title.toLowerCase();
@@ -247,7 +254,7 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
             )}
             {job?.source && (
               <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-800 text-purple-100 border border-purple-600">
-                📊 {job.source}
+                📊 {getDisplaySource(job.source)}
               </span>
             )}
           </div>
@@ -276,7 +283,7 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ExternalLink className="w-4 h-4 text-gray-300" />
-                <span className="text-sm font-medium text-gray-200">Apply on {job?.source || 'Platform'}</span>
+                <span className="text-sm font-medium text-gray-200">Apply on {getDisplaySource(job?.source || 'Platform')}</span>
               </div>
               <span className="text-xs text-gray-400">External Link</span>
             </div>
