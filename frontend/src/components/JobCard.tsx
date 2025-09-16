@@ -162,6 +162,14 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
             <h3 className="text-2xl md:text-3xl font-extrabold mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight" style={{color: 'var(--card-text-color)'}}>
               {job?.title || "Untitled Job"}
             </h3>
+
+            {job?.jobDuration && job.jobDuration !== 'N/A' && (
+              <span className="px-3 py-1 rounded-full text-xs font-semibold shadow-sm whitespace-nowrap border mb-2 block" style={{backgroundColor: 'var(--badge-bg-color)', color: 'var(--badge-text-color)', borderColor: 'var(--badge-border-color)'}}>
+                <Clock className="w-3 h-3 inline mr-1" />
+                {job.jobDuration}
+              </span>
+            )}
+
             <div className="flex items-center gap-2 mb-3">
               <span className={`px-2 py-1 rounded-full text-xs font-medium border ${jobLevel.color}`}>
                 {jobLevel.level}
@@ -171,13 +179,6 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
               </span>
             </div>
           </div>
-
-          {job?.jobDuration && (
-            <span className="px-3 py-1 rounded-full text-xs font-semibold shadow-sm whitespace-nowrap border" style={{backgroundColor: 'var(--badge-bg-color)', color: 'var(--badge-text-color)', borderColor: 'var(--badge-border-color)'}}>
-              <Clock className="w-3 h-3 inline mr-1" />
-              {job.jobDuration}
-            </span>
-          )}
         </div>
 
         {/* Company Information */}
@@ -283,18 +284,6 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
         </div>
       </div>
 
-      {/* Footer with Apply Button */}
-      <div className="flex justify-end mt-6">
-        <a
-          href={job?.jobURL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="md:hidden bg-gradient-to-r from-gray-800 to-gray-900 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-semibold flex items-center gap-2 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl text-base md:text-lg"
-        >
-          Apply Now
-          <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
-        </a>
-      </div>
     </div>
   );
 });

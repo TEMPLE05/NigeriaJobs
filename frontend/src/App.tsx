@@ -151,7 +151,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={
-        <div className="min-h-screen flex flex-col transition-all duration-500" style={{backgroundColor: 'var(--bg-color)'}}>
+        <div className="w-full min-h-screen min-h-[100dvh] flex flex-col" style={{backgroundColor: 'var(--bg-color)'}}>
       {/* Header */}
       <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -175,7 +175,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow overflow-y-auto">
+      <main className="flex-grow flex-1 overflow-y-auto">
 
       {/* Hero Section - Constrained */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

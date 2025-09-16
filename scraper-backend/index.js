@@ -64,8 +64,8 @@ app.get('/api/scrape', async (req, res) => {
     }
 });
 
-// Cron Function for scraping jobs daily (runs every 6 hours for testing)
-cron.schedule('0 */6 * * *', async () => {
+// Cron Function for scraping jobs hourly (runs every hour for testing)
+cron.schedule('0 * * * *', async () => {
     console.log('Daily scraping cron job started at', new Date().toLocaleString());
     for (const keyword of keywords) {
         for (const location of locations) {
