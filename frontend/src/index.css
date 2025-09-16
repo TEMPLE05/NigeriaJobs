@@ -1,3 +1,30 @@
+/* Hide scrollbars */
+body {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+/* Emergency root area fix */
+html, body, #root {
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh; /* mobile safe */
+  margin: 0;
+  padding: 0;
+}
+
+body, #root {
+  height: inherit;      /* 🔑 inherit from html */
+  min-height: inherit;  /* 🔑 sync with html */
+}
+
+#root {
+  display: flex !important;
+  flex-direction: column !important;
+}
 /* Tailwind Directives */
 @tailwind base;
 @tailwind components;
@@ -50,6 +77,34 @@ html {
   --filter-bg-color: #1F1F1F; /* darker filter background */
   --filter-border-color: rgba(255, 255, 255, 0.12); /* more visible filter border */
   --filter-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* stronger filter shadow */
+}
+
+/* Manual dark mode - extremely dark gray */
+.manual-dark.dark {
+  --bg-color: #050505; /* extremely dark gray background */
+  --card-bg-color: #0F0F0F; /* very dark gray card background */
+  --card-text-color: #FFFFFF; /* pure white for titles */
+  --card-secondary-text-color: #BBBBBB; /* dimmer gray for body text */
+  --card-border-color: #222222; /* dark gray border */
+  --badge-bg-color: #1A1A1A; /* dark gray badge background */
+  --badge-text-color: #FFFFFF;
+  --badge-border-color: #444444; /* darker gray border */
+  --keyword-badge-bg-color: #252525; /* very dark gray keyword badge */
+  --keyword-badge-text-color: #FFFFFF;
+  --keyword-badge-border-color: #555555; /* gray keyword border */
+  --header-bg-color: #050505; /* extremely dark gray header */
+  --header-border-color: rgba(255, 255, 255, 0.1); /* subtle border */
+  --footer-bg-color: #050505; /* extremely dark gray footer */
+  --footer-border-color: rgba(255, 255, 255, 0.1);
+  --hero-gradient: linear-gradient(135deg, #050505 0%, #0A0A0A 100%); /* dark gray gradient */
+  --filter-bg-color: #0F0F0F; /* very dark gray filter background */
+  --filter-border-color: rgba(255, 255, 255, 0.08);
+  --filter-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+/* System dark mode - keeps original neutral dark colors */
+.system-dark.dark {
+  /* Inherits from .dark above */
 }
 
 body {

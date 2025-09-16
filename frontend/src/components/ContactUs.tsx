@@ -1,12 +1,70 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Clock, Briefcase, Sun, Moon, Monitor } from 'lucide-react';
+import { Briefcase, Sun, Moon, Monitor } from 'lucide-react';
 
 const ContactUs: React.FC = () => {
   // Update page title
   useEffect(() => {
-    document.title = 'About Me - NigeriaJobs';
+    document.title = 'Contact Us - NigeriaJobs';
   }, []);
+
+  // Theme management with system preference detection
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+
+  // System theme detection
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const updateTheme = () => {
+      const systemPrefersDark = mediaQuery.matches;
+
+      console.log('Theme updated:', theme, 'systemPrefersDark:', systemPrefersDark);
+
+      if (theme === 'dark') {
+        document.documentElement.classList.remove('system-dark');
+        document.documentElement.classList.add('dark', 'manual-dark');
+      } else if (theme === 'system') {
+        document.documentElement.classList.remove('manual-dark');
+        if (systemPrefersDark) {
+          document.documentElement.classList.add('dark', 'system-dark');
+        } else {
+          document.documentElement.classList.remove('dark', 'system-dark');
+        }
+      } else {
+        document.documentElement.classList.remove('dark', 'manual-dark', 'system-dark');
+      }
+    };
+
+    // Load saved theme preference
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+
+    // Initial theme application
+    updateTheme();
+
+    // Listen for system theme changes
+    mediaQuery.addEventListener('change', updateTheme);
+
+    return () => mediaQuery.removeEventListener('change', updateTheme);
+  }, [theme]);
+
+  // Theme set functions
+  const setLightTheme = () => {
+    setTheme('light');
+    localStorage.setItem('theme', 'light');
+  };
+
+  const setDarkTheme = () => {
+    setTheme('dark');
+    localStorage.setItem('theme', 'dark');
+  };
+
+  const setSystemTheme = () => {
+    setTheme('system');
+    localStorage.setItem('theme', 'system');
+  };
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -38,30 +96,53 @@ const ContactUs: React.FC = () => {
       {/* Main Content */}
       <main className="flex-grow overflow-y-auto">
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-12 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+        {/* Floating background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-10 left-10 w-20 h-20 bg-blue-400 rounded-full opacity-20 animate-bounce" style={{animationDelay: '0s'}}></div>
+          <div className="absolute top-20 right-20 w-16 h-16 bg-purple-400 rounded-full opacity-20 animate-bounce" style={{animationDelay: '1s'}}></div>
+          <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-green-400 rounded-full opacity-20 animate-bounce" style={{animationDelay: '2s'}}></div>
+          <div className="absolute bottom-10 right-10 w-24 h-24 bg-pink-400 rounded-full opacity-20 animate-bounce" style={{animationDelay: '0.5s'}}></div>
+        </div>
+
+        <div className="text-center mb-12 relative z-10">
           <div className="absolute inset-0 rounded-3xl opacity-30" style={{background: 'var(--hero-gradient)'}}></div>
           <div className="relative">
-            <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-gray-900 dark:text-white">
+            <div className="inline-block p-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 mb-6 shadow-lg">
+              <span className="text-6xl">👨‍💻</span>
+            </div>
+            <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-gray-900 dark:text-white bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               About Me
             </h2>
             <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
               Discover the developer behind NigeriaJobs and my AI-enhanced development journey
             </p>
+            <div className="flex justify-center space-x-4">
+              <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium animate-pulse">
+                🚀 Full-Stack Developer
+              </div>
+              <div className="px-4 py-2 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium animate-pulse" style={{animationDelay: '0.5s'}}>
+                🤖 AI Enthusiast
+              </div>
+              <div className="px-4 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm font-medium animate-pulse" style={{animationDelay: '1s'}}>
+                🌍 Nigeria Focused
+              </div>
+            </div>
           </div>
         </div>
 
         {/* About Me Content */}
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border p-8 md:p-12" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)'}}>
-            {/* About Me Section */}
-            <div className="mb-12">
-              <div className="flex items-center mb-6">
-                <div className="text-4xl mr-4">🚀</div>
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  About Me
-                </h3>
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* About Me Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border p-8 md:p-12 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)'}}>
+            <div className="flex items-center mb-6">
+              <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 mr-4 shadow-lg animate-pulse">
+                <span className="text-2xl">🚀</span>
               </div>
+              <h3 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                About Me
+              </h3>
+            </div>
               <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
                 I'm a <strong className="text-blue-600 dark:text-blue-400">Junior Full-Stack Developer</strong> with a strong passion for building modern, user-friendly, and interactive web applications. I enjoy combining clean design with efficient backend logic to create solutions that not only work — but feel great to use.
               </p>
@@ -74,10 +155,12 @@ const ContactUs: React.FC = () => {
             </div>
 
             {/* NigeriaJobs Project Section */}
-            <div className="mb-12">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border p-8 md:p-12 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)'}}>
               <div className="flex items-center mb-6">
-                <div className="text-4xl mr-4">💼</div>
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <div className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mr-4 shadow-lg animate-pulse">
+                  <span className="text-2xl">💼</span>
+                </div>
+                <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   NigeriaJobs - My Featured Project
                 </h3>
               </div>
@@ -109,10 +192,12 @@ const ContactUs: React.FC = () => {
             </div>
 
             {/* Technologies Section */}
-            <div className="mb-12">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border p-8 md:p-12 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)'}}>
               <div className="flex items-center mb-6">
-                <div className="text-4xl mr-4">🛠️</div>
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <div className="p-3 rounded-full bg-gradient-to-r from-green-500 to-teal-500 mr-4 shadow-lg animate-pulse">
+                  <span className="text-2xl">🛠️</span>
+                </div>
+                <h3 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
                   Technologies I Use
                 </h3>
               </div>
@@ -218,10 +303,12 @@ const ContactUs: React.FC = () => {
             </div>
 
             {/* Let's Connect Section */}
-            <div>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border p-8 md:p-12 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)'}}>
               <div className="flex items-center mb-6">
-                <div className="text-4xl mr-4">📩</div>
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <div className="p-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 mr-4 shadow-lg animate-pulse">
+                  <span className="text-2xl">📩</span>
+                </div>
+                <h3 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   Let's Connect
                 </h3>
               </div>
@@ -237,12 +324,19 @@ const ContactUs: React.FC = () => {
                     GitHub Profile
                   </a>
                 </div>
+                <div className="mt-4 text-center">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Email: <a href="mailto:ogbonnatemple0@gmail.com" className="text-blue-600 dark:text-blue-400 hover:underline">ogbonnatemple0@gmail.com</a>
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    WhatsApp: <a href="https://wa.me/08137155469" className="text-blue-600 dark:text-blue-400 hover:underline">08137155469</a>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      </main>
+    </main>
 
       {/* Footer */}
       <footer className="flex-shrink-0 border-t" style={{backgroundColor: 'var(--footer-bg-color)', borderColor: 'var(--footer-border-color)'}}>
@@ -275,13 +369,25 @@ const ContactUs: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-3">
-              <button className="p-3 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110" title="Light mode">
+              <button
+                onClick={setLightTheme}
+                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'light' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                title="Light mode"
+              >
                 <Sun className="w-5 h-5" />
               </button>
-              <button className="p-3 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110" title="Dark mode">
+              <button
+                onClick={setDarkTheme}
+                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'dark' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                title="Dark mode"
+              >
                 <Moon className="w-5 h-5" />
               </button>
-              <button className="p-3 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110" title="System mode">
+              <button
+                onClick={setSystemTheme}
+                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'system' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                title="System mode"
+              >
                 <Monitor className="w-5 h-5" />
               </button>
             </div>

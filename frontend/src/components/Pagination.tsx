@@ -81,7 +81,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   return (
     <div
       ref={paginationRef}
-      className="flex items-center justify-center space-x-2 mt-8"
+      className="flex items-center justify-center space-x-6 mt-8"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -102,7 +102,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       </button>
 
       {/* Page Numbers */}
-      <div className="flex items-center space-x-1">
+      <div className="flex items-center space-x-3">
         {getPageNumbers().map((page) => (
           <button
             key={page}
