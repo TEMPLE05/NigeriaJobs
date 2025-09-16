@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Monitor } from 'lucide-react';
 
 const ContactUs: React.FC = () => {
   // Update page title
   useEffect(() => {
-    document.title = 'Contact Us - NigeriaJobs';
+    document.title = 'Contact Us - JobVista.NG';
   }, []);
 
   // Theme management with system preference detection
@@ -76,13 +76,10 @@ const ContactUs: React.FC = () => {
       <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="header-icon-gradient p-3 rounded-xl shadow-lg">
-                <Briefcase className="w-6 h-6 text-white" />
-              </div>
+            <div className="flex items-center">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  NigeriaJobs
+                  JobVista.NG
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                   Find your dream job
@@ -115,7 +112,7 @@ const ContactUs: React.FC = () => {
               About Me
             </h2>
             <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Discover the developer behind NigeriaJobs and my AI-enhanced development journey
+              Discover the developer behind JobVista.NG and my AI-enhanced development journey
             </p>
             <div className="flex justify-center space-x-4">
               <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium animate-pulse">
@@ -150,7 +147,7 @@ const ContactUs: React.FC = () => {
                 I'm extremely <strong className="text-purple-600 dark:text-purple-400">versatile</strong> and leverage <strong className="text-green-600 dark:text-green-400">AI extensively</strong> to enhance my workflow and push the boundaries of what's possible. Whether it's generating code, debugging complex issues, or optimizing performance, AI is an integral part of my development process.
               </p>
               <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
-                This website you're currently using — <strong className="text-orange-600 dark:text-orange-400">NigeriaJobs</strong> — is one of my proudest creations. It's a comprehensive job aggregation platform that scrapes multiple Nigerian job sites, providing users with real-time job opportunities in one convenient location.
+                This website you're currently using — <strong className="text-orange-600 dark:text-orange-400">JobVista.NG</strong> — is one of my proudest creations. It's a comprehensive job aggregation platform that scrapes multiple Nigerian job sites, providing users with real-time job opportunities in one convenient location.
               </p>
             </div>
 
@@ -161,12 +158,12 @@ const ContactUs: React.FC = () => {
                   <span className="text-2xl">💼</span>
                 </div>
                 <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  NigeriaJobs - My Featured Project
+                  JobVista.NG - My Featured Project
                 </h3>
               </div>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 mb-6">
                 <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-                  <strong className="text-blue-600 dark:text-blue-400">NigeriaJobs</strong> is a comprehensive job aggregation platform I built from the ground up. This application scrapes multiple Nigerian job websites in real-time, consolidating thousands of job opportunities into a single, user-friendly interface.
+                  <strong className="text-blue-600 dark:text-blue-400">JobVista.NG</strong> is a comprehensive job aggregation platform I built from the ground up. This application scrapes multiple Nigerian job websites in real-time, consolidating thousands of job opportunities into a single, user-friendly interface.
                 </p>
                 <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
                   The platform features advanced search capabilities, real-time updates, and a responsive design that works seamlessly across all devices. I utilized AI extensively throughout the development process — from code generation and debugging to performance optimization and feature ideation.
@@ -343,12 +340,12 @@ const ContactUs: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center space-x-3">
-              <div className="footer-icon-gradient p-1.5 rounded-lg">
-                <Briefcase className="w-5 h-5 text-white" />
+              <div className="p-1.5">
+                <img src="/logo.app/in-site.png" alt="Logo" className="h-7 w-auto" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  NigeriaJobs
+                  JobVista.NG
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Job aggregation platform
@@ -395,7 +392,7 @@ const ContactUs: React.FC = () => {
 
           <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>
             <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-              © 2025 NigeriaJobs. All rights reserved.
+              © 2025 JobVista.NG. All rights reserved.
             </p>
           </div>
         </div>
