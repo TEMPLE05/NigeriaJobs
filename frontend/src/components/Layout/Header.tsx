@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Moon, Sun, Menu } from 'lucide-react';
+import { Moon, Sun, Menu } from 'lucide-react';
 
 interface HeaderProps {
   darkMode: boolean;
@@ -26,13 +26,10 @@ export const Header: React.FC<HeaderProps> = ({
               <Menu className="w-6 h-6 text-gray-600 dark:text-gray-400" />
             </button>
             
-            <div className="flex items-center space-x-3">
-              <div className="footer-icon-gradient p-2 rounded-lg">
-                <Briefcase className="w-6 h-6 text-white" />
-              </div>
+            <div className="flex items-center">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  NigeriaJobs
+                  JobVista.NG
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                   Find your dream job

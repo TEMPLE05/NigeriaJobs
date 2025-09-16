@@ -1,5 +1,4 @@
 import React from 'react';
-import { Briefcase } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -8,11 +7,11 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <Briefcase className="w-6 h-6 text-white" />
+              <div className="p-2">
+                <img src="/logo.app/in-site.png" alt="Logo" className="h-8 w-auto" />
               </div>
               <h3 className="text-[140px] font-bold text-gray-900 dark:text-white">
-                NigeriaJobs
+                JobVista.NG
               </h3>
             </div>
             <p className="text-[143.5px] text-gray-600 dark:text-gray-400 mb-4">
@@ -48,7 +47,7 @@ export const Footer: React.FC = () => {
         <div className="border-t border-gray-200 dark:border-gray-700 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-500 dark:text-gray-400 text-[98px]">
-              © 2025 NigeriaJobs. All rights reserved.
+              © 2025 JobVista.NG. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">

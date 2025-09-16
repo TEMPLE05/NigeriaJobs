@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
   Moon,
   Sun,
-  Briefcase,
   Trash2,
   Monitor,
   FileSearch,
@@ -156,13 +155,10 @@ const App: React.FC = () => {
       <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="header-icon-gradient p-3 rounded-xl shadow-lg">
-                <Briefcase className="w-6 h-6 text-white" />
-              </div>
+            <div className="flex items-center">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  NigeriaJobs
+                  JobVista.NG
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                   Find your dream job
@@ -390,12 +386,12 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center space-x-3">
-              <div className="footer-icon-gradient p-1.5 rounded-lg">
-                <Briefcase className="w-5 h-5 text-white" />
+              <div className="p-1.5">
+                <img src="/logo.app/in-site.png" alt="Logo" className="h-7 w-auto" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  NigeriaJobs
+                  JobVista.NG
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Job aggregation platform
@@ -442,7 +438,7 @@ const App: React.FC = () => {
 
           <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>
             <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-              © 2025 NigeriaJobs. All rights reserved.
+              © 2025 JobVista.NG. All rights reserved.
             </p>
           </div>
         </div>
