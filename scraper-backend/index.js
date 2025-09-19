@@ -59,7 +59,7 @@ app.get('/api/scrape', async (req, res) => {
         }
         res.json({ message: "Scraping completed successfully!" });
     } catch (error) {
-        console.error("Manual scrape failed:", error);
+        console.error('Scrape failed:', error.message);
         res.status(500).json({ error: "Scraping failed" });
     }
 });
