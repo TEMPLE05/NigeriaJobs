@@ -54,7 +54,7 @@ function validateJobURL(jobURL, source) {
 }
 
 async function createBrowser() {
-    return await puppeteerExtra.launch({ headless: true });
+    return await puppeteerExtra.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
 }
 
 async function scrapeIndeed(page, keyword, location) {
