@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "postinstall": "puppeteer browsers install chrome"
+    "postinstall": "apt-get update && apt-get install -y chromium-browser"
   },
   "author": "David Oyewale",
   "license": "ISC",
