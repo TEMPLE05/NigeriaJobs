@@ -54,7 +54,7 @@ function validateJobURL(jobURL, source) {
 }
 
 async function createBrowser() {
-    return await puppeteerExtra.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    return await puppeteerExtra.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'], protocolTimeout: 120000 });
 }
 
 async function scrapeIndeed(page, keyword, location) {
@@ -72,19 +72,16 @@ async function scrapeIndeed(page, keyword, location) {
             }
         });
 
-        await page.goto(IndeedUrl, { timeout: 0 });
+        await page.goto(IndeedUrl, { timeout: 120000 });
         const jobs = await page.evaluate(() =>
-            Array.from(document.querySelectorAll('.job_seen_beacon'), (e) => ({
-                title: e.querySelector('.jobTitle')?.innerText || 'N/A',
+            Array.from(document.querySelectorAll('[data-testid="jobsearch-SerpJobCard"], .job_seen_beacon, .tapItem'), (e) => ({
+                title: e.querySelector('h2 span')?.innerText || 'N/A',
                 companyName: e.querySelector('[data-testid=company-name]')?.innerText || 'N/A',
-                companyURL: e.querySelector('.base-search-card__subtitle a')?.href || 'N/A',
+                companyURL: e.querySelector('[data-testid=company-name] a')?.href || 'N/A',
                 jobLocation: e.querySelector('[data-testid=text-location]')?.innerText || 'N/A',
-                jobDuration: e.querySelector('[data-testid=myJobsStateDate]')?.innerText ||
-                           e.querySelector('time')?.innerText ||
-                           e.querySelector('.job-search-card__time')?.innerText ||
-                           'N/A',
+                jobDuration: e.querySelector('time')?.innerText || 'N/A',
                 jobURL: e.querySelector('a')?.href || 'N/A',
-                salary: e.querySelector('[data-testid=salary-snippet]')?.innerText || null,
+                salary: e.querySelector('[data-testid=attribute_snippet_testid]')?.innerText || null,
             }))
         );
 
@@ -143,7 +140,7 @@ async function scrapeLinkedIn(page, keyword, location) {
             }
         });
 
-        await page.goto(linkedinUrl, { timeout: 0 });
+        await page.goto(linkedinUrl, { timeout: 120000 });
         const jobs = await page.evaluate(() =>
             Array.from(document.querySelectorAll('li'), (e) => ({
                 title: e.querySelector('.base-search-card__title')?.innerText || 'N/A',
@@ -215,7 +212,7 @@ async function scrapeJobberman(page, keyword, location) {
             }
         });
 
-        await page.goto(jobbermanUrl, { timeout: 0 });
+        await page.goto(jobbermanUrl, { timeout: 120000 });
         const jobs = await page.evaluate(() =>
             Array.from(document.querySelectorAll('[data-cy=listing-cards-components]'), (e) => ({
                 title: e.querySelector('[data-cy=listing-title-link]')?.innerText || 'N/A',
