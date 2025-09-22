@@ -50,18 +50,19 @@ const locations = ['nigeria','remote','abuja','lagos','fulltime','parttime','ons
 
 // 🔹 Manual scrape endpoint (so you don’t wait for cron)
 app.get('/api/scrape', async (req, res) => {
-    try {
-        for (const keyword of keywords) {
-            for (const location of locations) {
-                await scrapeAllPlatforms(keyword, location);
-                console.log(`Scraped data for ${keyword} in ${location}`);
+    res.json({ message: 'Scraping started in background' });
+    (async () => {
+        try {
+            for (const keyword of keywords) {
+                for (const location of locations) {
+                    await scrapeAllPlatforms(keyword, location);
+                    console.log(`Scraped data for ${keyword} in ${location}`);
+                }
             }
+        } catch (error) {
+            console.error('Background scrape failed:', error.message);
         }
-        res.json({ message: "Scraping completed successfully!" });
-    } catch (error) {
-        console.error('Scrape failed:', error.message);
-        res.status(500).json({ error: "Scraping failed" });
-    }
+    })();
 });
 
 // Cron Function for scraping jobs hourly (runs every hour for testing)
@@ -201,6 +202,16 @@ app.get('/api/debug/jobs', async (req, res) => {
 });
 
 // Manual cleanup endpoint to remove old jobs
+// New endpoint to fetch latest 50 jobs sorted by createdAt descending
+app.get('/api/results', async (req, res) => {
+    try {
+        const jobs = await Job.find().sort({ createdAt: -1 }).limit(50);
+        res.json(jobs);
+    } catch (error) {
+        console.error('Error fetching results:', error);
+        res.status(500).send('Error fetching job results');
+    }
+});
 app.delete('/api/cleanup', async (req, res) => {
     try {
         const oneWeekAgo = new Date();
