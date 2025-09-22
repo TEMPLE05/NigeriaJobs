@@ -3,8 +3,10 @@ import React from 'react';
 interface FilterSidebarProps {
   keyword: string;
   location: string;
+  source: string;
   onKeywordChange: (value: string) => void;
   onLocationChange: (value: string) => void;
+  onSourceChange: (value: string) => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -12,14 +14,17 @@ interface FilterSidebarProps {
 export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   keyword,
   location,
+  source,
   onKeywordChange,
   onLocationChange,
+  onSourceChange,
   isOpen,
   onClose
 }) => {
   const clearFilters = () => {
     onKeywordChange('');
     onLocationChange('');
+    onSourceChange('All');
   };
 
   return (
@@ -78,20 +83,61 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   value={location}
                   onChange={e => onLocationChange(e.target.value)}
                   className="filter-select"
-                  list="locations"
+                  list="sidebar-locations"
+                  autoComplete="off"
                 />
-                <datalist id="locations">
-                  <option value="Lagos" />
-                  <option value="Abuja" />
-                  <option value="Port Harcourt" />
-                  <option value="Kano" />
-                  <option value="Ibadan" />
-                  <option value="Remote" />
-                  <option value="Enugu" />
-                  <option value="Kaduna" />
-                  <option value="Benin City" />
-                  <option value="Owerri" />
-                </datalist>
+                <datalist id="sidebar-locations">
+                   <option value="lagos" />
+                   <option value="abuja" />
+                   <option value="port harcourt" />
+                   <option value="kano" />
+                   <option value="ibadan" />
+                   <option value="kaduna" />
+                   <option value="enugu" />
+                   <option value="benin city" />
+                   <option value="warri" />
+                   <option value="calabar" />
+                   <option value="owerri" />
+                   <option value="abeokuta" />
+                   <option value="jos" />
+                   <option value="ilorin" />
+                   <option value="sokoto" />
+                   <option value="onitsha" />
+                   <option value="maiduguri" />
+                   <option value="zaria" />
+                   <option value="aba" />
+                   <option value="uyo" />
+                   <option value="yola" />
+                   <option value="akure" />
+                   <option value="osogbo" />
+                   <option value="bauchi" />
+                   <option value="minna" />
+                   <option value="makurdi" />
+                   <option value="gombe" />
+                   <option value="jalingo" />
+                   <option value="damaturu" />
+                   <option value="katsina" />
+                   <option value="lokoja" />
+                   <option value="remote" />
+                   <option value="hybrid" />
+                 </datalist>
+              </div>
+
+              <div>
+                <label htmlFor="source-select" className="filter-label">
+                  Job Source
+                </label>
+                <select
+                  id="source-select"
+                  value={source}
+                  onChange={e => onSourceChange(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="All">All Sources</option>
+                  <option value="Indeed">Indeed</option>
+                  <option value="LinkedIn">LinkedIn</option>
+                  <option value="Jobberman">Jobberman</option>
+                </select>
               </div>
             </div>
 

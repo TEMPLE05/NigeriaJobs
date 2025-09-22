@@ -260,7 +260,7 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
           {/* Salary Information */}
           {job?.salary && (
             <div className="mt-3">
-              <span className="block md:inline-block px-3 py-2 rounded-lg text-sm font-semibold bg-yellow-900 text-yellow-200 border border-yellow-700">
+              <span className="inline-block px-3 py-2 rounded-lg text-base md:text-sm font-semibold bg-yellow-900 text-yellow-200 border border-yellow-700">
                 💰 {job.salary}
               </span>
             </div>
