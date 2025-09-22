@@ -58,7 +58,7 @@ async function createBrowser() {
     return await puppeteerExtra.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || require("puppeteer").executablePath(),
         protocolTimeout: 120000
     });
 }
