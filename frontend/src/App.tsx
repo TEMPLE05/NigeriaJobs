@@ -24,6 +24,7 @@ const Pagination = lazy(() => import('./components/Pagination').then(module => (
 const App: React.FC = () => {
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
+  const [source, setSource] = useState('All');
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -103,18 +104,18 @@ const App: React.FC = () => {
 
   // Initial load
   useEffect(() => {
-    fetchJobs(undefined, undefined, 1, 8);
-  }, [fetchJobs]);
+    fetchJobs(undefined, undefined, source, 1, 8);
+  }, [fetchJobs, source]);
 
   const handleSearch = useCallback(() => {
     setCurrentPage(1); // Reset to first page when searching
-    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, 1, 8);
-  }, [keyword, location, fetchJobs]);
+    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, 1, 8);
+  }, [keyword, location, source, fetchJobs]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
-    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, page, 8);
-  }, [keyword, location, fetchJobs]);
+    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, page, 8);
+  }, [keyword, location, source, fetchJobs]);
 
   const handleCleanup = async () => {
     if (cleanupLoading) return;
@@ -127,7 +128,7 @@ const App: React.FC = () => {
       setCleanupMessage(`✅ ${result.message}`);
       // Refresh jobs after cleanup
       setCurrentPage(1);
-      fetchJobs(keyword.trim() || undefined, location.trim() || undefined, 1, 8);
+      fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, 1, 8);
     } catch (error) {
       setCleanupMessage(`❌ Failed to cleanup: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
@@ -144,7 +145,7 @@ const App: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [keyword, location, handleSearch]);
+  }, [keyword, location, source, handleSearch]);
 
 
   return (
@@ -221,7 +222,7 @@ const App: React.FC = () => {
         <div className="mb-8">
           <div className="rounded-2xl p-6 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--filter-border-color)', boxShadow: 'var(--filter-shadow)'}}>
             <h3 className="text-xl font-bold mb-4" style={{color: 'var(--card-text-color)'}}>Filters</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="keyword-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
                   Search Keywords
@@ -248,6 +249,23 @@ const App: React.FC = () => {
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
                 />
+              </div>
+
+              <div>
+                <label htmlFor="source-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
+                  Job Source
+                </label>
+                <select
+                  id="source-filter"
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
+                >
+                  <option value="All">All Sources</option>
+                  <option value="Indeed">Indeed</option>
+                  <option value="LinkedIn">LinkedIn</option>
+                  <option value="Jobberman">Jobberman</option>
+                </select>
               </div>
             </div>
 
@@ -280,6 +298,7 @@ const App: React.FC = () => {
                   onClick={() => {
                     setKeyword('');
                     setLocation('');
+                    setSource('All');
                   }}
                   className="px-6 py-2 rounded-xl font-medium transition-all duration-300" style={{backgroundColor: '#dc2626', color: 'white'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
                 >
@@ -318,7 +337,7 @@ const App: React.FC = () => {
               <ErrorMessage
                 message={error}
                 onRetry={() => {
-                  fetchJobs(keyword.trim() || undefined, location.trim() || undefined, currentPage, 8);
+                  fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, currentPage, 8);
                 }}
               />
             </Suspense>

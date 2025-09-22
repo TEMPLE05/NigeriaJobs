@@ -19,9 +19,8 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
     return date.toLocaleDateString();
   };
 
-  // Helper function to get display source (Indeed shows as LinkedIn)
+  // Helper function to get display source
   const getDisplaySource = (source: string) => {
-    if (source === 'Indeed') return 'LinkedIn';
     return source;
   };
 

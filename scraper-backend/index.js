@@ -105,10 +105,11 @@ app.get('/api/jobs', async (req, res) => {
         return res.json(cachedResult);
     }
 
-    let { keyword, location, page = 1, limit = 10 } = req.query;
+    let { keyword, location, source, page = 1, limit = 10 } = req.query;
 
     keyword = keyword || '';
     location = location || '';
+    source = source || '';
     page = parseInt(page);
     limit = parseInt(limit);
 
@@ -126,6 +127,11 @@ app.get('/api/jobs', async (req, res) => {
         }
         if (location) {
             query.jobLocation = { $regex: new RegExp(location, 'i') };
+        }
+        if (source) {
+            query.source = source;
+            console.log(`Filtering by source: "${source}"`);
+            console.log(`Query object:`, query);
         }
 
         // Get total count for pagination

@@ -74,14 +74,13 @@ async function scrapeIndeed(page, keyword, location) {
 
         await page.goto(IndeedUrl, { timeout: 120000 });
         const jobs = await page.evaluate(() =>
-            Array.from(document.querySelectorAll('[data-testid="jobsearch-SerpJobCard"], .job_seen_beacon, .tapItem'), (e) => ({
-                title: e.querySelector('h2 span')?.innerText || 'N/A',
-                companyName: e.querySelector('[data-testid=company-name]')?.innerText || 'N/A',
-                companyURL: e.querySelector('[data-testid=company-name] a')?.href || 'N/A',
-                jobLocation: e.querySelector('[data-testid=text-location]')?.innerText || 'N/A',
+            Array.from(document.querySelectorAll('.job_seen_beacon'), (e) => ({
+                title: e.querySelector('h2 a span[title]')?.innerText || 'N/A',
+                companyName: e.querySelector('.companyName')?.innerText || 'N/A',
+                jobLocation: e.querySelector('.companyLocation')?.innerText || 'N/A',
                 jobDuration: e.querySelector('time')?.innerText || 'N/A',
-                jobURL: e.querySelector('a')?.href || 'N/A',
-                salary: e.querySelector('[data-testid=attribute_snippet_testid]')?.innerText || null,
+                jobURL: new URL(e.querySelector('h2 a')?.href || '', window.location.origin).href || 'N/A',
+                salary: e.querySelector('.salary-snippet')?.innerText || null,
             }))
         );
 
