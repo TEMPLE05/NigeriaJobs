@@ -1,4 +1,5 @@
 const puppeteerExtra = require('puppeteer-extra');
+const puppeteer = require('puppeteer');
 const pluginStealth = require('puppeteer-extra-plugin-stealth');
 const Job = require('./model/job');
 
@@ -57,7 +58,7 @@ async function createBrowser() {
     return await puppeteerExtra.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
         protocolTimeout: 120000
     });
 }

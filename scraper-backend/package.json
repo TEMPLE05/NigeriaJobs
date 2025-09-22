@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "postinstall": "apt-get update && apt-get install -y chromium-browser"
+    "start": "node index.js"
   },
   "author": "David Oyewale",
   "license": "ISC",
