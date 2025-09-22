@@ -11,6 +11,7 @@ export const useJobs = () => {
   const fetchJobs = useCallback(async (
     keyword?: string,
     location?: string,
+    source?: string,
     page: number = 1,
     limit: number = 8
   ) => {
@@ -18,7 +19,7 @@ export const useJobs = () => {
     setError(null);
 
     try {
-      const response = await jobsApi.getJobs(keyword, location, page, limit);
+      const response = await jobsApi.getJobs(keyword, location, source, page, limit);
       setJobs(response.jobs);
       setPagination(response.pagination);
     } catch (err) {

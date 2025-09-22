@@ -22,7 +22,7 @@ const PopulateJobs: React.FC = () => {
       try {
         setLoading(true);
         // Fetch all jobs with a large limit
-        const response = await jobsApi.getJobs(undefined, undefined, 1, 1000);
+        const response = await jobsApi.getJobs(undefined, undefined, undefined, 1, 1000);
         setJobs(response.jobs);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch jobs');

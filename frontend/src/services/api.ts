@@ -9,10 +9,11 @@ const api = axios.create({
 });
 
 export const jobsApi = {
-  // Get all jobs with keyword, location, and pagination filtering
+  // Get all jobs with keyword, location, source, and pagination filtering
   getJobs: async (
     keyword?: string,
     location?: string,
+    source?: string,
     page: number = 1,
     limit: number = 8
   ): Promise<JobResponse> => {
@@ -23,6 +24,9 @@ export const jobsApi = {
     }
     if (location && location.trim()) {
       params.append('location', location.trim());
+    }
+    if (source && source !== 'All') {
+      params.append('source', source);
     }
 
     params.append('page', page.toString());
