@@ -78,7 +78,20 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   value={location}
                   onChange={e => onLocationChange(e.target.value)}
                   className="filter-select"
+                  list="locations"
                 />
+                <datalist id="locations">
+                  <option value="Lagos" />
+                  <option value="Abuja" />
+                  <option value="Port Harcourt" />
+                  <option value="Kano" />
+                  <option value="Ibadan" />
+                  <option value="Remote" />
+                  <option value="Enugu" />
+                  <option value="Kaduna" />
+                  <option value="Benin City" />
+                  <option value="Owerri" />
+                </datalist>
               </div>
             </div>
 
