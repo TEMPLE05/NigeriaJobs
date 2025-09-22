@@ -54,7 +54,12 @@ function validateJobURL(jobURL, source) {
 }
 
 async function createBrowser() {
-    return await puppeteerExtra.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'], protocolTimeout: 120000 });
+    return await puppeteerExtra.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--disable-gpu'],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium-browser",
+        protocolTimeout: 120000
+    });
 }
 
 async function scrapeIndeed(page, keyword, location) {
@@ -72,7 +77,7 @@ async function scrapeIndeed(page, keyword, location) {
             }
         });
 
-        await page.goto(IndeedUrl, { timeout: 120000 });
+        await page.goto(IndeedUrl, { waitUntil: "domcontentloaded", timeout: 0 });
         const jobs = await page.evaluate(() =>
             Array.from(document.querySelectorAll('.job_seen_beacon'), (e) => ({
                 title: e.querySelector('h2 a span[title]')?.innerText || 'N/A',
@@ -139,7 +144,7 @@ async function scrapeLinkedIn(page, keyword, location) {
             }
         });
 
-        await page.goto(linkedinUrl, { timeout: 120000 });
+        await page.goto(linkedinUrl, { waitUntil: "domcontentloaded", timeout: 0 });
         const jobs = await page.evaluate(() =>
             Array.from(document.querySelectorAll('li'), (e) => ({
                 title: e.querySelector('.base-search-card__title')?.innerText || 'N/A',
@@ -211,7 +216,7 @@ async function scrapeJobberman(page, keyword, location) {
             }
         });
 
-        await page.goto(jobbermanUrl, { timeout: 120000 });
+        await page.goto(jobbermanUrl, { waitUntil: "domcontentloaded", timeout: 0 });
         const jobs = await page.evaluate(() =>
             Array.from(document.querySelectorAll('[data-cy=listing-cards-components]'), (e) => ({
                 title: e.querySelector('[data-cy=listing-title-link]')?.innerText || 'N/A',
