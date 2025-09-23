@@ -7,7 +7,7 @@
     "start": "node index.js",
     "postinstall": "npx puppeteer browsers install chrome"
   },
-  "author": "David Oyewale",
+  "author": "Ogbonna Temple. C",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
