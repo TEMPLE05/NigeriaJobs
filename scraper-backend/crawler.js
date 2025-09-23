@@ -104,6 +104,11 @@ async function scrapeIndeed(page, keyword, location) {
                 continue;
             }
 
+            // Normalize fields for deduplication
+            job.title = job.title.trim().toLowerCase();
+            job.companyName = job.companyName.trim().toLowerCase();
+            job.jobLocation = job.jobLocation.trim().toLowerCase();
+
             // Use upsert to prevent duplicates and update scrapedAt
             await Job.findOneAndUpdate(
                 {
@@ -174,6 +179,11 @@ async function scrapeLinkedIn(page, keyword, location) {
                 console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
                 continue;
             }
+
+            // Normalize fields for deduplication
+            job.title = job.title.trim().toLowerCase();
+            job.companyName = job.companyName.trim().toLowerCase();
+            job.jobLocation = job.jobLocation.trim().toLowerCase();
 
             // Use upsert to prevent duplicates and update scrapedAt
             await Job.findOneAndUpdate(
@@ -246,6 +256,11 @@ async function scrapeJobberman(page, keyword, location) {
                 console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
                 continue;
             }
+
+            // Normalize fields for deduplication
+            job.title = job.title.trim().toLowerCase();
+            job.companyName = job.companyName.trim().toLowerCase();
+            job.jobLocation = job.jobLocation.trim().toLowerCase();
 
             // Use upsert to prevent duplicates and update scrapedAt
             await Job.findOneAndUpdate(
