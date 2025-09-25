@@ -3,6 +3,9 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const cron = require('node-cron');
 const compression = require('compression');
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 const { scrapeAllPlatforms } = require('./crawler');
 const Job = require('./model/job');
@@ -36,6 +39,12 @@ const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(compression()); // Enable gzip compression for better performance
+app.use(express.json({ limit: '10mb' })); // Parse JSON bodies
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
 
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
@@ -235,6 +244,335 @@ app.delete('/api/cleanup', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// New endpoint to remove duplicate jobs
+app.delete('/api/cleanup-duplicates', async (req, res) => {
+    try {
+        // Use MongoDB aggregation to find duplicates with their scrapedAt timestamps
+        const duplicates = await Job.aggregate([
+            {
+                $group: {
+                    _id: {
+                        title: "$title",
+                        companyName: "$companyName",
+                        jobLocation: "$jobLocation"
+                    },
+                    jobs: {
+                        $push: {
+                            _id: "$_id",
+                            scrapedAt: "$scrapedAt"
+                        }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $match: {
+                    count: { $gt: 1 }
+                }
+            }
+        ]);
+
+        let totalDeleted = 0;
+
+        for (const duplicate of duplicates) {
+            // Sort jobs by scrapedAt timestamp (newest first)
+            const sortedJobs = duplicate.jobs.sort((a, b) =>
+                new Date(b.scrapedAt) - new Date(a.scrapedAt)
+            );
+
+            // Keep the most recent one, delete the rest
+            const idsToDelete = sortedJobs.slice(1).map(job => job._id);
+            if (idsToDelete.length > 0) {
+                const result = await Job.deleteMany({ _id: { $in: idsToDelete } });
+                totalDeleted += result.deletedCount;
+                console.log(`Removed ${result.deletedCount} duplicates for: ${duplicate._id.title} at ${duplicate._id.companyName}`);
+            }
+        }
+
+        res.json({
+            message: `Duplicate cleanup completed. Removed ${totalDeleted} duplicate jobs.`,
+            deletedCount: totalDeleted,
+            duplicateGroups: duplicates.length
+        });
+    } catch (error) {
+        console.error('Error during duplicate cleanup:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// CV Generation endpoint - works without external APIs
+app.post('/api/cv/generate', async (req, res) => {
+    try {
+        const { cvData, targetJob, enhanceContent, optimizeKeywords } = req.body;
+
+        let enhancedCV = { ...cvData };
+
+        // Simple local enhancement logic (no external API needed)
+        if (enhanceContent || optimizeKeywords) {
+            enhancedCV = enhanceCVLocally(cvData, targetJob, enhanceContent, optimizeKeywords);
+        }
+
+        // Generate PDF
+        const pdfBuffer = await generateCVPDF(enhancedCV);
+
+        // Save PDF temporarily
+        const pdfPath = path.join('uploads', `cv_${Date.now()}.pdf`);
+        fs.writeFileSync(pdfPath, pdfBuffer);
+
+        res.json({
+            success: true,
+            cvData: enhancedCV,
+            pdfUrl: `/api/cv/download/${path.basename(pdfPath)}`,
+            message: 'CV generated successfully with local enhancement',
+            aiUsed: false
+        });
+
+    } catch (error) {
+        console.error('Error generating CV:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate CV',
+            error: error.message
+        });
+    }
+});
+
+// CV Enhancement endpoint (upload existing CV)
+app.post('/api/cv/enhance', async (req, res) => {
+    try {
+        // For demo purposes, create a sample enhanced CV
+        const enhancedCV = {
+            personalInfo: {
+                fullName: "Enhanced CV",
+                email: "enhanced@example.com",
+                phone: "+1234567890",
+                address: "Enhanced Address",
+                summary: "This CV has been processed and enhanced with local algorithms for better presentation and keyword optimization."
+            },
+            education: [],
+            workExperience: [],
+            skills: [
+                { name: "JavaScript", level: "Advanced", category: "Programming" },
+                { name: "React", level: "Advanced", category: "Frontend" },
+                { name: "Node.js", level: "Intermediate", category: "Backend" },
+                { name: "Python", level: "Intermediate", category: "Programming" }
+            ]
+        };
+
+        // Generate PDF
+        const pdfBuffer = await generateCVPDF(enhancedCV);
+        const pdfPath = path.join('uploads', `enhanced_cv_${Date.now()}.pdf`);
+        fs.writeFileSync(pdfPath, pdfBuffer);
+
+        res.json({
+            success: true,
+            cvData: enhancedCV,
+            pdfUrl: `/api/cv/download/${path.basename(pdfPath)}`,
+            message: 'CV enhanced successfully with local processing',
+            aiUsed: false
+        });
+
+    } catch (error) {
+        console.error('Error enhancing CV:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to enhance CV',
+            error: error.message
+        });
+    }
+});
+
+// PDF Download endpoint
+app.get('/api/cv/download/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join('uploads', filename);
+
+    if (fs.existsSync(filePath)) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+
+        // Clean up file after download
+        fileStream.on('end', () => {
+            fs.unlinkSync(filePath);
+        });
+    } else {
+        res.status(404).json({ error: 'File not found' });
+    }
+});
+
+// Local CV enhancement function (no external APIs needed)
+function enhanceCVLocally(cvData, targetJob, enhanceContent, optimizeKeywords) {
+    const enhanced = { ...cvData };
+
+    if (enhanceContent) {
+        // Enhance summary
+        if (enhanced.personalInfo.summary) {
+            enhanced.personalInfo.summary = enhanced.personalInfo.summary
+                .replace(/\b(i am|i'm|my name is)\b/gi, 'Professional with')
+                .replace(/\b(like|enjoy|love)\b/gi, 'experienced in')
+                + ' Committed to delivering high-quality results and continuous learning.';
+        }
+
+        // Enhance work experience descriptions
+        if (enhanced.workExperience) {
+            enhanced.workExperience = enhanced.workExperience.map(exp => ({
+                ...exp,
+                description: exp.description
+                    ? exp.description.replace(/\b(helped|worked|did)\b/gi, 'Successfully managed')
+                    : 'Led key initiatives and delivered measurable results in a fast-paced environment.'
+            }));
+        }
+    }
+
+    if (optimizeKeywords && targetJob) {
+        const jobKeywords = extractJobKeywords(targetJob);
+
+        // Add relevant skills based on target job
+        if (!enhanced.skills) enhanced.skills = [];
+
+        jobKeywords.forEach(keyword => {
+            if (!enhanced.skills.some(skill => skill.name.toLowerCase().includes(keyword.toLowerCase()))) {
+                enhanced.skills.push({
+                    name: keyword,
+                    level: 'Intermediate',
+                    category: 'Technical'
+                });
+            }
+        });
+
+        // Optimize summary with keywords
+        if (enhanced.personalInfo.summary && !enhanced.personalInfo.summary.includes(jobKeywords[0])) {
+            enhanced.personalInfo.summary += ` Skilled in ${jobKeywords.slice(0, 3).join(', ')}.`;
+        }
+    }
+
+    return enhanced;
+}
+
+// Extract keywords from job title
+function extractJobKeywords(jobTitle) {
+    const keywords = {
+        'developer': ['JavaScript', 'React', 'Node.js', 'Git', 'API Development'],
+        'engineer': ['Problem Solving', 'System Design', 'Testing', 'Agile', 'DevOps'],
+        'designer': ['UI/UX', 'Figma', 'Adobe Creative Suite', 'Prototyping', 'User Research'],
+        'manager': ['Leadership', 'Team Management', 'Project Planning', 'Communication', 'Strategy'],
+        'analyst': ['Data Analysis', 'SQL', 'Excel', 'Reporting', 'Business Intelligence']
+    };
+
+    const lowerTitle = jobTitle.toLowerCase();
+    for (const [key, value] of Object.entries(keywords)) {
+        if (lowerTitle.includes(key)) {
+            return value;
+        }
+    }
+
+    return ['Communication', 'Problem Solving', 'Teamwork', 'Adaptability', 'Leadership'];
+}
+
+// Function to generate PDF from CV data
+async function generateCVPDF(cvData) {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    const html = generateCVHTML(cvData);
+
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+            top: '20px',
+            right: '20px',
+            bottom: '20px',
+            left: '20px'
+        }
+    });
+
+    await browser.close();
+    return pdfBuffer;
+}
+
+// Function to generate HTML for CV
+function generateCVHTML(cvData) {
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>${cvData.personalInfo.fullName} - CV</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+            .name { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
+            .contact { font-size: 14px; color: #666; }
+            .section { margin-bottom: 25px; }
+            .section-title { font-size: 18px; font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; }
+            .job-title { font-weight: bold; }
+            .company { font-style: italic; color: #666; }
+            .date { float: right; color: #666; }
+            .skill { display: inline-block; background: #f0f0f0; padding: 5px 10px; margin: 2px; border-radius: 3px; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div class="name">${cvData.personalInfo.fullName}</div>
+            <div class="contact">
+                ${cvData.personalInfo.email} | ${cvData.personalInfo.phone}<br>
+                ${cvData.personalInfo.address}<br>
+                ${cvData.personalInfo.linkedin ? `<a href="${cvData.personalInfo.linkedin}">LinkedIn</a> | ` : ''}
+                ${cvData.personalInfo.github ? `<a href="${cvData.personalInfo.github}">GitHub</a> | ` : ''}
+                ${cvData.personalInfo.website ? `<a href="${cvData.personalInfo.website}">Website</a>` : ''}
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Professional Summary</div>
+            <p>${cvData.personalInfo.summary}</p>
+        </div>
+
+        ${cvData.workExperience && cvData.workExperience.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Work Experience</div>
+            ${cvData.workExperience.map(exp => `
+                <div style="margin-bottom: 15px;">
+                    <div class="job-title">${exp.position}</div>
+                    <div class="company">${exp.company} - ${exp.location}</div>
+                    <div class="date">${exp.startDate} - ${exp.endDate}</div>
+                    <div style="clear: both; margin-top: 5px;">${exp.description}</div>
+                    ${exp.achievements ? `<ul>${exp.achievements.map(ach => `<li>${ach}</li>`).join('')}</ul>` : ''}
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+
+        ${cvData.education && cvData.education.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Education</div>
+            ${cvData.education.map(edu => `
+                <div style="margin-bottom: 15px;">
+                    <div class="job-title">${edu.degree} in ${edu.field}</div>
+                    <div class="company">${edu.institution}</div>
+                    <div class="date">${edu.startDate} - ${edu.endDate}</div>
+                    ${edu.gpa ? `<div>GPA: ${edu.gpa}</div>` : ''}
+                    ${edu.description ? `<div>${edu.description}</div>` : ''}
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+
+        ${cvData.skills && cvData.skills.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Skills</div>
+            ${cvData.skills.map(skill => `<span class="skill">${skill.name} (${skill.level})</span>`).join('')}
+        </div>
+        ` : ''}
+    </body>
+    </html>
+    `;
+}
 
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);

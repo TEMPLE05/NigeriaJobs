@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Job, JobResponse } from '../types/Job';
+import { CVData, CVGenerationRequest, CVEnhancementRequest, CVResponse } from '../types/CV';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -45,6 +46,33 @@ export const jobsApi = {
   // Trigger cleanup of old jobs
   triggerCleanup: async (): Promise<{ message: string; deletedCount: number }> => {
     const response = await api.delete('/api/cleanup');
+    return response.data;
+  },
+
+};
+
+export const cvApi = {
+  // Generate new CV
+  generateCV: async (request: CVGenerationRequest): Promise<CVResponse> => {
+    const response = await api.post('/api/cv/generate', request);
+    return response.data;
+  },
+
+  // Enhance existing CV
+  enhanceCV: async (formData: FormData): Promise<CVResponse> => {
+    const response = await api.post('/api/cv/enhance', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Download CV PDF
+  downloadCV: async (filename: string): Promise<Blob> => {
+    const response = await api.get(`/api/cv/download/${filename}`, {
+      responseType: 'blob',
+    });
     return response.data;
   }
 };
