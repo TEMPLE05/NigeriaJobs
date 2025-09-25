@@ -19,6 +19,29 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
     return date.toLocaleDateString();
   };
 
+  // Helper function to capitalize job titles
+  const capitalizeTitle = (title: string) => {
+    return title
+      .toLowerCase()
+      .split(' ')
+      .map(word => {
+        // Skip common words that should remain lowercase
+        const skipWords = ['and', 'or', 'but', 'nor', 'for', 'so', 'yet', 'at', 'by', 'for', 'in', 'of', 'on', 'to', 'with', 'as', 'a', 'an', 'the'];
+        if (skipWords.includes(word)) {
+          return word;
+        }
+        // Capitalize first letter, handle special cases
+        if (word.includes('/')) {
+          return word.split('/').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('/');
+        }
+        if (word.includes('-')) {
+          return word.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('-');
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
+  };
+
   // Helper function to get display source
   const getDisplaySource = (source: string) => {
     return source;
@@ -165,7 +188,7 @@ export const JobCard: React.FC<JobCardProps> = memo(({ job }) => {
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1 min-w-0">
             <h3 className="text-2xl md:text-3xl font-extrabold mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight" style={{color: 'var(--card-text-color)'}}>
-              {job?.title || "Untitled Job"}
+              {job?.title ? capitalizeTitle(job.title) : "Untitled Job"}
             </h3>
 
             {job?.jobDuration && job.jobDuration !== 'N/A' && (

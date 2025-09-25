@@ -185,22 +185,76 @@ async function scrapeLinkedIn(page, keyword, location) {
             job.companyName = job.companyName.trim().toLowerCase();
             job.jobLocation = job.jobLocation.trim().toLowerCase();
 
-            // Use upsert to prevent duplicates and update scrapedAt
-            await Job.findOneAndUpdate(
-                {
-                    title: job.title,
-                    companyName: job.companyName,
-                    jobLocation: job.jobLocation
-                },
-                {
-                    ...job,
-                    scrapedAt: new Date() // Always update the scraped date
-                },
-                {
-                    upsert: true,
-                    new: true
+            try {
+                try {
+                    try {
+                        // Use upsert to prevent duplicates and update scrapedAt
+                        await Job.findOneAndUpdate(
+                            {
+                                title: job.title,
+                                companyName: job.companyName,
+                                jobLocation: job.jobLocation
+                            },
+                            {
+                                ...job,
+                                scrapedAt: new Date() // Always update the scraped date
+                            },
+                            {
+                                upsert: true,
+                                new: true
+                            }
+                        );
+                    } catch (error) {
+                        if (error.code === 11000) {
+                            // Duplicate key error - job already exists, just update scrapedAt
+                            console.log(`Duplicate job skipped: ${job.title} at ${job.companyName}`);
+                            await Job.findOneAndUpdate(
+                                {
+                                    title: job.title,
+                                    companyName: job.companyName,
+                                    jobLocation: job.jobLocation
+                                },
+                                { scrapedAt: new Date() }
+                            );
+                        } else {
+                            console.error('Error saving job:', error);
+                            throw error;
+                        }
+                    }
+                } catch (error) {
+                    if (error.code === 11000) {
+                        // Duplicate key error - job already exists, just update scrapedAt
+                        console.log(`Duplicate job skipped: ${job.title} at ${job.companyName}`);
+                        await Job.findOneAndUpdate(
+                            {
+                                title: job.title,
+                                companyName: job.companyName,
+                                jobLocation: job.jobLocation
+                            },
+                            { scrapedAt: new Date() }
+                        );
+                    } else {
+                        console.error('Error saving job:', error);
+                        throw error;
+                    }
                 }
-            );
+            } catch (error) {
+                if (error.code === 11000) {
+                    // Duplicate key error - job already exists, just update scrapedAt
+                    console.log(`Duplicate job skipped: ${job.title} at ${job.companyName}`);
+                    await Job.findOneAndUpdate(
+                        {
+                            title: job.title,
+                            companyName: job.companyName,
+                            jobLocation: job.jobLocation
+                        },
+                        { scrapedAt: new Date() }
+                    );
+                } else {
+                    console.error('Error saving job:', error);
+                    throw error;
+                }
+            }
         }
 
         const NumberOfJobs = jobs.length;
