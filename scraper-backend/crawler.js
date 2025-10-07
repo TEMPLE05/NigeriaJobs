@@ -78,60 +78,100 @@ async function scrapeIndeed(page, keyword, location) {
             }
         });
 
-        await page.goto(IndeedUrl, { waitUntil: "domcontentloaded", timeout: 0 });
-        const jobs = await page.evaluate(() =>
-            Array.from(document.querySelectorAll('.job_seen_beacon'), (e) => ({
-                title: e.querySelector('h2 a span[title]')?.innerText || 'N/A',
-                companyName: e.querySelector('.companyName')?.innerText || 'N/A',
-                jobLocation: e.querySelector('.companyLocation')?.innerText || 'N/A',
-                jobDuration: e.querySelector('time')?.innerText || 'N/A',
-                jobURL: new URL(e.querySelector('h2 a')?.href || '', window.location.origin).href || 'N/A',
-                salary: e.querySelector('.salary-snippet')?.innerText || null,
-            }))
-        );
+        console.log(`Navigating to Indeed URL: ${IndeedUrl}`);
+        await page.goto(IndeedUrl, { waitUntil: "domcontentloaded", timeout: 60000 }); // 60s timeout
 
-        // Save jobs to database with deduplication
-        for (const job of jobs) {
-            job.keyword = keyword;
-            job.location = location;
-            job.source = 'Indeed';
-            job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
-            job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+        const jobs = await page.evaluate(() => {
+            const selectors = ['.job_seen_beacon', '.jobsearch-ResultsList li', '[data-jk]']; // Fallback selectors
+            let elements = [];
+            for (const selector of selectors) {
+                elements = document.querySelectorAll(selector);
+                if (elements.length > 0) break;
+            }
+            return Array.from(elements, (e) => ({
+                title: e.querySelector('h2 a span[title], .jobTitle, a')?.innerText || 'N/A',
+                companyName: e.querySelector('.companyName, .company')?.innerText || 'N/A',
+                jobLocation: e.querySelector('.companyLocation, .location')?.innerText || 'N/A',
+                jobDuration: e.querySelector('time, .date')?.innerText || 'N/A',
+                jobURL: e.querySelector('h2 a, a')?.href ? new URL(e.querySelector('h2 a, a').href, window.location.origin).href : 'N/A',
+                salary: e.querySelector('.salary-snippet, .salary')?.innerText || null,
+            }));
+        });
 
-            // Validate job URL matches the source platform
-            if (!validateJobURL(job.jobURL, job.source)) {
-                console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
-                continue;
+        console.log(`${jobs.length} jobs extracted from Indeed for ${keyword} in ${location}`);
+        if (jobs.length === 0) {
+            console.warn(`No jobs found on Indeed page - selectors may be outdated`);
+        }
+
+        // Process jobs in chunks to reduce memory usage
+        const BATCH_SIZE = 50;
+        let totalSaved = 0;
+
+        for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
+            const batch = jobs.slice(i, i + BATCH_SIZE);
+            const validJobs = [];
+
+            for (const job of batch) {
+                // Skip jobs with missing critical data
+                if (job.title === 'N/A' || job.jobURL === 'N/A') {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.log(`Skipping job with missing title or URL from Indeed`);
+                    }
+                    continue;
+                }
+
+                job.keyword = keyword;
+                job.location = location;
+                job.source = 'Indeed';
+                job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
+                job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+                // Validate job URL matches the source platform
+                if (!validateJobURL(job.jobURL, job.source)) {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
+                    }
+                    continue;
+                }
+
+                // Normalize fields
+                job.title = job.title.trim().toLowerCase();
+                job.companyName = job.companyName.trim().toLowerCase();
+                job.jobLocation = job.jobLocation.trim().toLowerCase();
+
+                validJobs.push(job);
             }
 
-            // Normalize fields for deduplication
-            job.title = job.title.trim().toLowerCase();
-            job.companyName = job.companyName.trim().toLowerCase();
-            job.jobLocation = job.jobLocation.trim().toLowerCase();
+            // Batch database operations
+            if (validJobs.length > 0) {
+                const jobOperations = validJobs.map(job => ({
+                    updateOne: {
+                        filter: { jobURL: job.jobURL },
+                        update: {
+                            ...job,
+                            scrapedAt: new Date()
+                        },
+                        upsert: true
+                    }
+                }));
 
-            // Use upsert to prevent duplicates and update scrapedAt
-            await Job.findOneAndUpdate(
-                {
-                    title: job.title,
-                    companyName: job.companyName,
-                    jobLocation: job.jobLocation
-                },
-                {
-                    ...job,
-                    scrapedAt: new Date() // Always update the scraped date
-                },
-                {
-                    upsert: true,
-                    new: true
+                const result = await Job.bulkWrite(jobOperations);
+                const savedCount = result.upsertedCount + result.modifiedCount;
+                totalSaved += savedCount;
+
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`${savedCount} ${keyword} jobs saved from Indeed batch (inserted: ${result.upsertedCount}, updated: ${result.modifiedCount})`);
                 }
-            );
+            }
         }
-        const NumberOfJobs = jobs.length;
-        console.log(`${NumberOfJobs} ${keyword} jobs scraped from indeed`);
+
+        if (process.env.NODE_ENV !== 'development') {
+            console.log(`${totalSaved} ${keyword} jobs saved from Indeed`);
+        }
         return jobs;
     } catch (error) {
-        console.error("Error scraping Indeed:", error);
-        return [];   
+        console.error(`Error scraping Indeed for ${keyword} in ${location}:`, error.message);
+        return [];
     }
 }
 
@@ -150,119 +190,101 @@ async function scrapeLinkedIn(page, keyword, location) {
             }
         });
 
-        await page.goto(linkedinUrl, { waitUntil: "domcontentloaded", timeout: 0 });
-        const jobs = await page.evaluate(() =>
-            Array.from(document.querySelectorAll('li'), (e) => ({
-                title: e.querySelector('.base-search-card__title')?.innerText || 'N/A',
-                companyName: e.querySelector('.base-search-card__subtitle a')?.innerText || 'N/A',
+        console.log(`Navigating to LinkedIn URL: ${linkedinUrl}`);
+        await page.goto(linkedinUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+
+        const jobs = await page.evaluate(() => {
+            const selectors = ['li', '.job-search-card', '.base-search-card']; // Fallback selectors
+            let elements = [];
+            for (const selector of selectors) {
+                elements = document.querySelectorAll(selector);
+                if (elements.length > 0) break;
+            }
+            return Array.from(elements, (e) => ({
+                title: e.querySelector('.base-search-card__title, .job-title, h3')?.innerText || 'N/A',
+                companyName: e.querySelector('.base-search-card__subtitle a, .company-name')?.innerText || 'N/A',
                 companyURL: e.querySelector('.base-search-card__subtitle a')?.href || 'N/A',
-                jobLocation: e.querySelector('.job-search-card__location')?.innerText || 'N/A',
-                jobDuration: e.querySelector('time')?.innerText ||
-                           e.querySelector('[data-testid=myJobsStateDate]')?.innerText ||
-                           e.querySelector('.job-search-card__time')?.innerText ||
-                           'N/A',
-                jobURL: e.querySelector('a.base-card__full-link')?.href || 'N/A',
-                salary: e.querySelector('.job-search-card__salary-info')?.innerText || null,
-            }))
-        );
+                jobLocation: e.querySelector('.job-search-card__location, .location')?.innerText || 'N/A',
+                jobDuration: e.querySelector('time, [data-testid=myJobsStateDate], .job-search-card__time')?.innerText || 'N/A',
+                jobURL: e.querySelector('a.base-card__full-link, a')?.href || 'N/A',
+                salary: e.querySelector('.job-search-card__salary-info, .salary')?.innerText || null,
+            }));
+        });
 
-        // Save jobs to database with deduplication
-        for (const job of jobs) {
-            job.keyword = keyword;
-            job.location = location;
-            job.source = 'LinkedIn';
-            job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
-            job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+        console.log(`${jobs.length} jobs extracted from LinkedIn for ${keyword} in ${location}`);
+        if (jobs.length === 0) {
+            console.warn(`No jobs found on LinkedIn page - selectors may be outdated`);
+        }
 
-            // Validate job URL matches the source platform
-            if (!validateJobURL(job.jobURL, job.source)) {
-                console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
-                continue;
+        // Process jobs in chunks to reduce memory usage
+        const BATCH_SIZE = 50;
+        let totalSaved = 0;
+
+        for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
+            const batch = jobs.slice(i, i + BATCH_SIZE);
+            const validJobs = [];
+
+            for (const job of batch) {
+                // Skip jobs with missing critical data
+                if (job.title === 'N/A' || job.jobURL === 'N/A') {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.log(`Skipping job with missing title or URL from LinkedIn`);
+                    }
+                    continue;
+                }
+
+                job.keyword = keyword;
+                job.location = location;
+                job.source = 'LinkedIn';
+                job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
+                job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+                // Validate job URL matches the source platform
+                if (!validateJobURL(job.jobURL, job.source)) {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
+                    }
+                    continue;
+                }
+
+                // Normalize fields
+                job.title = job.title.trim().toLowerCase();
+                job.companyName = job.companyName.trim().toLowerCase();
+                job.jobLocation = job.jobLocation.trim().toLowerCase();
+
+                validJobs.push(job);
             }
 
-            // Normalize fields for deduplication
-            job.title = job.title.trim().toLowerCase();
-            job.companyName = job.companyName.trim().toLowerCase();
-            job.jobLocation = job.jobLocation.trim().toLowerCase();
-
-            try {
-                try {
-                    try {
-                        // Use upsert to prevent duplicates and update scrapedAt
-                        await Job.findOneAndUpdate(
-                            {
-                                title: job.title,
-                                companyName: job.companyName,
-                                jobLocation: job.jobLocation
-                            },
-                            {
-                                ...job,
-                                scrapedAt: new Date() // Always update the scraped date
-                            },
-                            {
-                                upsert: true,
-                                new: true
-                            }
-                        );
-                    } catch (error) {
-                        if (error.code === 11000) {
-                            // Duplicate key error - job already exists, just update scrapedAt
-                            console.log(`Duplicate job skipped: ${job.title} at ${job.companyName}`);
-                            await Job.findOneAndUpdate(
-                                {
-                                    title: job.title,
-                                    companyName: job.companyName,
-                                    jobLocation: job.jobLocation
-                                },
-                                { scrapedAt: new Date() }
-                            );
-                        } else {
-                            console.error('Error saving job:', error);
-                            throw error;
-                        }
-                    }
-                } catch (error) {
-                    if (error.code === 11000) {
-                        // Duplicate key error - job already exists, just update scrapedAt
-                        console.log(`Duplicate job skipped: ${job.title} at ${job.companyName}`);
-                        await Job.findOneAndUpdate(
-                            {
-                                title: job.title,
-                                companyName: job.companyName,
-                                jobLocation: job.jobLocation
-                            },
-                            { scrapedAt: new Date() }
-                        );
-                    } else {
-                        console.error('Error saving job:', error);
-                        throw error;
-                    }
-                }
-            } catch (error) {
-                if (error.code === 11000) {
-                    // Duplicate key error - job already exists, just update scrapedAt
-                    console.log(`Duplicate job skipped: ${job.title} at ${job.companyName}`);
-                    await Job.findOneAndUpdate(
-                        {
-                            title: job.title,
-                            companyName: job.companyName,
-                            jobLocation: job.jobLocation
+            // Batch database operations
+            if (validJobs.length > 0) {
+                const jobOperations = validJobs.map(job => ({
+                    updateOne: {
+                        filter: { jobURL: job.jobURL },
+                        update: {
+                            ...job,
+                            scrapedAt: new Date()
                         },
-                        { scrapedAt: new Date() }
-                    );
-                } else {
-                    console.error('Error saving job:', error);
-                    throw error;
+                        upsert: true
+                    }
+                }));
+
+                const result = await Job.bulkWrite(jobOperations);
+                const savedCount = result.upsertedCount + result.modifiedCount;
+                totalSaved += savedCount;
+
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`${savedCount} ${keyword} jobs saved from LinkedIn batch (inserted: ${result.upsertedCount}, updated: ${result.modifiedCount})`);
                 }
             }
         }
 
-        const NumberOfJobs = jobs.length;
-        console.log(`${NumberOfJobs} ${keyword} jobs scraped from LinkedIn`);
+        if (process.env.NODE_ENV !== 'development') {
+            console.log(`${totalSaved} ${keyword} jobs saved from LinkedIn`);
+        }
         return jobs;
     } catch (error) {
-        console.error("Error scraping LinkedIn:", error);
-        return []; 
+        console.error(`Error scraping LinkedIn for ${keyword} in ${location}:`, error.message);
+        return [];
     }
 }
 
@@ -281,65 +303,101 @@ async function scrapeJobberman(page, keyword, location) {
             }
         });
 
-        await page.goto(jobbermanUrl, { waitUntil: "domcontentloaded", timeout: 0 });
-        const jobs = await page.evaluate(() =>
-            Array.from(document.querySelectorAll('[data-cy=listing-cards-components]'), (e) => ({
-                title: e.querySelector('[data-cy=listing-title-link]')?.innerText || 'N/A',
-                companyName: e.querySelector('.text-loading-animate-link')?.innerText || 'N/A',
-                companyURL: e.querySelector('.text-loading-animate-link')?.href || 'N/A',
-                jobLocation: e.querySelector('.text-loading-hide')?.innerText || 'N/A',
-                jobDuration: e.querySelector('p .text-loading-animate')?.innerText ||
-                           e.querySelector('[data-cy=job-date]')?.innerText ||
-                           e.querySelector('.job-date')?.innerText ||
-                           'N/A',
-                jobURL: e.querySelector('[data-cy=listing-title-link]')?.href || 'N/A',
-                salary: e.querySelector('[data-cy=salary-range]')?.innerText || null,
-            }))
-        );
+        console.log(`Navigating to Jobberman URL: ${jobbermanUrl}`);
+        await page.goto(jobbermanUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
 
-        // Save jobs to database with deduplication
-        for (const job of jobs) {
-            job.keyword = keyword;
-            job.location = location;
-            job.source = 'Jobberman';
-            job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
-            job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
-
-            // Validate job URL matches the source platform
-            if (!validateJobURL(job.jobURL, job.source)) {
-                console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
-                continue;
+        const jobs = await page.evaluate(() => {
+            const selectors = ['[data-cy=listing-cards-components]', '.job-card', '.listing-card']; // Fallback selectors
+            let elements = [];
+            for (const selector of selectors) {
+                elements = document.querySelectorAll(selector);
+                if (elements.length > 0) break;
             }
+            return Array.from(elements, (e) => ({
+                title: e.querySelector('[data-cy=listing-title-link], .job-title, a')?.innerText || 'N/A',
+                companyName: e.querySelector('.text-loading-animate-link, .company-name')?.innerText || 'N/A',
+                companyURL: e.querySelector('.text-loading-animate-link, a')?.href || 'N/A',
+                jobLocation: e.querySelector('.text-loading-hide, .location')?.innerText || 'N/A',
+                jobDuration: e.querySelector('p .text-loading-animate, [data-cy=job-date], .job-date')?.innerText || 'N/A',
+                jobURL: e.querySelector('[data-cy=listing-title-link], a')?.href || 'N/A',
+                salary: e.querySelector('[data-cy=salary-range], .salary')?.innerText || null,
+            }));
+        });
 
-            // Normalize fields for deduplication
-            job.title = job.title.trim().toLowerCase();
-            job.companyName = job.companyName.trim().toLowerCase();
-            job.jobLocation = job.jobLocation.trim().toLowerCase();
-
-            // Use upsert to prevent duplicates and update scrapedAt
-            await Job.findOneAndUpdate(
-                {
-                    title: job.title,
-                    companyName: job.companyName,
-                    jobLocation: job.jobLocation
-                },
-                {
-                    ...job,
-                    scrapedAt: new Date() // Always update the scraped date
-                },
-                {
-                    upsert: true,
-                    new: true
-                }
-            );
+        console.log(`${jobs.length} jobs extracted from Jobberman for ${keyword} in ${location}`);
+        if (jobs.length === 0) {
+            console.warn(`No jobs found on Jobberman page - selectors may be outdated`);
         }
 
-        const NumberOfJobs = jobs.length;
-        console.log(`${NumberOfJobs} ${keyword} jobs scraped from Jobberman`);
+        // Process jobs in chunks to reduce memory usage
+        const BATCH_SIZE = 50;
+        let totalSaved = 0;
+
+        for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
+            const batch = jobs.slice(i, i + BATCH_SIZE);
+            const validJobs = [];
+
+            for (const job of batch) {
+                // Skip jobs with missing critical data
+                if (job.title === 'N/A' || job.jobURL === 'N/A') {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.log(`Skipping job with missing title or URL from Jobberman`);
+                    }
+                    continue;
+                }
+
+                job.keyword = keyword;
+                job.location = location;
+                job.source = 'Jobberman';
+                job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
+                job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
+
+                // Validate job URL matches the source platform
+                if (!validateJobURL(job.jobURL, job.source)) {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn(`Skipping job with invalid URL for ${job.source}: ${job.jobURL}`);
+                    }
+                    continue;
+                }
+
+                // Normalize fields
+                job.title = job.title.trim().toLowerCase();
+                job.companyName = job.companyName.trim().toLowerCase();
+                job.jobLocation = job.jobLocation.trim().toLowerCase();
+
+                validJobs.push(job);
+            }
+
+            // Batch database operations
+            if (validJobs.length > 0) {
+                const jobOperations = validJobs.map(job => ({
+                    updateOne: {
+                        filter: { jobURL: job.jobURL },
+                        update: {
+                            ...job,
+                            scrapedAt: new Date()
+                        },
+                        upsert: true
+                    }
+                }));
+
+                const result = await Job.bulkWrite(jobOperations);
+                const savedCount = result.upsertedCount + result.modifiedCount;
+                totalSaved += savedCount;
+
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`${savedCount} ${keyword} jobs saved from Jobberman batch (inserted: ${result.upsertedCount}, updated: ${result.modifiedCount})`);
+                }
+            }
+        }
+
+        if (process.env.NODE_ENV !== 'development') {
+            console.log(`${totalSaved} ${keyword} jobs saved from Jobberman`);
+        }
         return jobs;
     } catch (error) {
-        console.error("Error scraping Jobberman:", error);
-        return [];  
+        console.error(`Error scraping Jobberman for ${keyword} in ${location}:`, error.message);
+        return [];
     }
 }
 
@@ -353,10 +411,18 @@ async function scrapeAllPlatforms(keyword, location) {
         // Add delays between requests to avoid rate limiting
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+        // Locations that work well with Indeed (geographic)
+        const indeedValidLocations = ['nigeria', 'abuja', 'lagos'];
+
         // Scrape platforms sequentially with delays to avoid overwhelming servers
         console.log(`Starting scrape for ${keyword} in ${location}`);
 
-        const indeedJobs = await scrapeIndeed(pageIndeed, keyword, location);
+        let indeedJobs = [];
+        if (indeedValidLocations.includes(location.toLowerCase())) {
+            indeedJobs = await scrapeIndeed(pageIndeed, keyword, location);
+        } else {
+            console.log(`Skipping Indeed for non-geographic location: ${location}`);
+        }
         await delay(2000); // 2 second delay
 
         const linkedInJobs = await scrapeLinkedIn(pageLinkedIn, keyword, location);

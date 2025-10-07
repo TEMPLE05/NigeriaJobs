@@ -47,8 +47,47 @@ if (!fs.existsSync('uploads')) {
 }
 
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => {
+    .then(async () => {
         console.log('Database Connection Successful');
+
+        // Create indexes for better query performance
+        try {
+            const Job = require('./model/job');
+
+            // Index for deduplication and recent jobs filtering
+            await Job.collection.createIndex(
+                { jobURL: 1 },
+                { unique: true, name: 'jobURL_unique' }
+            );
+
+            // Compound index for API queries (scrapedAt + jobURL for deduplication)
+            await Job.collection.createIndex(
+                { scrapedAt: -1, jobURL: 1 },
+                { name: 'scrapedAt_jobURL' }
+            );
+
+            // Index for title searches
+            await Job.collection.createIndex(
+                { title: 1, scrapedAt: -1 },
+                { name: 'title_scrapedAt' }
+            );
+
+            // Index for source filtering
+            await Job.collection.createIndex(
+                { source: 1, scrapedAt: -1 },
+                { name: 'source_scrapedAt' }
+            );
+
+            // Index for location filtering
+            await Job.collection.createIndex(
+                { jobLocation: 1, scrapedAt: -1 },
+                { name: 'jobLocation_scrapedAt' }
+            );
+
+            console.log('Database indexes created successfully');
+        } catch (indexError) {
+            console.warn('Some indexes may already exist:', indexError.message);
+        }
     })
     .catch((e) => {
         console.error('Error connecting to MongoDB:', e.message);
@@ -126,7 +165,8 @@ app.get('/api/jobs', async (req, res) => {
         let jobs;
         let totalJobs;
 
-        const query = {};
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const query = { scrapedAt: { $gte: sevenDaysAgo } };
         if (keyword) {
             // Escape special regex characters
             const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -143,12 +183,50 @@ app.get('/api/jobs', async (req, res) => {
             console.log(`Query object:`, query);
         }
 
-        // Get total count for pagination
-        totalJobs = await Job.countDocuments(query);
-
-        // Get paginated results
+        // Use optimized aggregation to deduplicate by jobURL and get latest scrape
         const skip = (page - 1) * limit;
-        jobs = await Job.find(query).sort({ scrapedAt: -1 }).skip(skip).limit(limit);
+        const pipeline = [
+            { $match: query },
+            { $sort: { scrapedAt: -1 } },
+            {
+                $group: {
+                    _id: "$jobURL",
+                    doc: { $first: "$$ROOT" }
+                }
+            },
+            {
+                $replaceRoot: { newRoot: "$doc" }
+            },
+            { $sort: { scrapedAt: -1 } },
+            {
+                $facet: {
+                    totalCount: [{ $count: "count" }],
+                    jobs: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $project: {
+                                _id: 1,
+                                title: 1,
+                                companyName: 1,
+                                jobLocation: 1,
+                                jobType: 1,
+                                salary: 1,
+                                scrapedAt: 1,
+                                source: 1,
+                                jobURL: 1,
+                                keyword: 1,
+                                location: 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ];
+
+        const aggResult = await Job.aggregate(pipeline).hint({ scrapedAt: -1, jobURL: 1 });
+        totalJobs = aggResult[0]?.totalCount?.[0]?.count || 0;
+        jobs = aggResult[0]?.jobs || [];
         console.log(`Found ${jobs.length} jobs with initial search (page ${page}, limit ${limit})`);
 
         if (jobs.length > 0) {
@@ -158,11 +236,52 @@ app.get('/api/jobs', async (req, res) => {
         if (jobs.length === 0 && keyword) {
             console.log(`No jobs found with initial search, trying fallback search...`);
             const fallbackQuery = {
-                title: { $regex: new RegExp(keyword, 'i') }
+                title: { $regex: new RegExp(keyword, 'i') },
+                scrapedAt: { $gte: sevenDaysAgo }
             };
 
-            totalJobs = await Job.countDocuments(fallbackQuery);
-            const similarJobs = await Job.find(fallbackQuery).sort({ scrapedAt: -1 }).skip(skip).limit(limit);
+            const fallbackPipeline = [
+                { $match: fallbackQuery },
+                { $sort: { scrapedAt: -1 } },
+                {
+                    $group: {
+                        _id: "$jobURL",
+                        doc: { $first: "$$ROOT" }
+                    }
+                },
+                {
+                    $replaceRoot: { newRoot: "$doc" }
+                },
+                { $sort: { scrapedAt: -1 } },
+                {
+                    $facet: {
+                        totalCount: [{ $count: "count" }],
+                        jobs: [
+                            { $skip: skip },
+                            { $limit: limit },
+                            {
+                                $project: {
+                                    _id: 1,
+                                    title: 1,
+                                    companyName: 1,
+                                    jobLocation: 1,
+                                    jobType: 1,
+                                    salary: 1,
+                                    scrapedAt: 1,
+                                    source: 1,
+                                    jobURL: 1,
+                                    keyword: 1,
+                                    location: 1
+                                }
+                            }
+                        ]
+                    }
+                }
+            ];
+
+            const fallbackAggResult = await Job.aggregate(fallbackPipeline).hint({ scrapedAt: -1, jobURL: 1 });
+            totalJobs = fallbackAggResult[0]?.totalCount?.[0]?.count || 0;
+            const similarJobs = fallbackAggResult[0]?.jobs || [];
 
             console.log(`Fallback search found ${similarJobs.length} jobs`);
             if (similarJobs.length > 0) {
@@ -578,3 +697,4 @@ app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
     console.log('Scheduling cron job');
 });
+
