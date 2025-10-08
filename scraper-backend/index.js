@@ -183,7 +183,7 @@ app.get('/api/jobs', async (req, res) => {
             console.log(`Query object:`, query);
         }
 
-        // Use optimized aggregation to deduplicate by jobURL and get latest scrape
+        // Use optimized aggregation to deduplicate by jobURL and randomize sources while keeping newest first
         const skip = (page - 1) * limit;
         const pipeline = [
             { $match: query },
@@ -197,7 +197,17 @@ app.get('/api/jobs', async (req, res) => {
             {
                 $replaceRoot: { newRoot: "$doc" }
             },
-            { $sort: { scrapedAt: -1 } },
+            {
+                $addFields: {
+                    randomSort: { $rand: {} }
+                }
+            },
+            {
+                $sort: {
+                    scrapedAt: -1,
+                    randomSort: 1
+                }
+            },
             {
                 $facet: {
                     totalCount: [{ $count: "count" }],
@@ -252,7 +262,17 @@ app.get('/api/jobs', async (req, res) => {
                 {
                     $replaceRoot: { newRoot: "$doc" }
                 },
-                { $sort: { scrapedAt: -1 } },
+                {
+                    $addFields: {
+                        randomSort: { $rand: {} }
+                    }
+                },
+                {
+                    $sort: {
+                        scrapedAt: -1,
+                        randomSort: 1
+                    }
+                },
                 {
                     $facet: {
                         totalCount: [{ $count: "count" }],
