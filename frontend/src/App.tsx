@@ -13,6 +13,7 @@ import PopulateJobs from './components/PopulateJobs';
 import HelpCenter from './components/HelpCenter';
 import ContactUs from './components/ContactUs';
 import CVGenerator from './components/CVGenerator';
+import Preloader from './components/Preloader';
 
 // Lazy load components for better performance
 const JobCard = lazy(() => import('./components/JobCard').then(module => ({ default: module.JobCard })));
@@ -29,6 +30,7 @@ const App: React.FC = () => {
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Theme management with system preference detection
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
@@ -103,6 +105,23 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Preloader timing
+  useEffect(() => {
+    document.body.classList.add('preloader-active');
+    const timer = setTimeout(() => {
+      const preloader = document.querySelector('.preloader');
+      preloader?.classList.add('hidden');
+      setTimeout(() => {
+        setIsLoading(false);
+        document.body.classList.remove('preloader-active');
+      }, 600);
+    }, 3000);
+    return () => {
+      clearTimeout(timer);
+      document.body.classList.remove('preloader-active');
+    };
+  }, []);
+
   // Initial load
   useEffect(() => {
     fetchJobs(undefined, undefined, source, 1, 8);
@@ -149,6 +168,10 @@ const App: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [keyword, location, source, handleSearch]);
 
+
+  if (isLoading) {
+    return <Preloader />;
+  }
 
   return (
     <div className="relative">
