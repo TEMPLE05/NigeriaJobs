@@ -1,0 +1,111 @@
+.preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, #1a1a1a, #000);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.6s ease-out;
+}
+
+.preloader.hidden {
+  opacity: 0;
+}
+
+.preloader-content {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  transform: none; /* Remove translate offset */
+}
+
+.preloader-text {
+  font-family: "Poppins", sans-serif;
+  color: #fbbf24;
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.2;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.6);
+  white-space: normal;
+  word-break: break-word;
+  max-width: 90vw;
+  margin: 0;
+}
+
+.preloader-subtitle {
+  font-family: "Poppins", sans-serif;
+  color: #d1d5db;
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  animation: fadeInUp 2s ease-in-out;
+  text-align: center;
+  max-width: 500px;
+  line-height: 1.4;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+  }
+  to {
+    text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.4);
+  }
+}
+
+/* Responsive adjustments - clamp() handles most scaling */
+/* Fine-tuning for very small screens */
+@media (max-width: 480px) {
+  .preloader-text {
+    font-size: clamp(1.5rem, 6vw, 3rem);
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-width: 360px) {
+  .preloader-text {
+    font-size: clamp(1.2rem, 5vw, 2.5rem);
+    letter-spacing: 0.5px;
+  }
+}
