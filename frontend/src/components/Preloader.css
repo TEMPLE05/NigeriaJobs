@@ -30,7 +30,7 @@
 
 .preloader-text {
   font-family: "Poppins", sans-serif;
-  color: #fbbf24;
+  color: white;
   font-size: clamp(2rem, 8vw, 4rem);
   font-weight: 700;
   letter-spacing: 2px;

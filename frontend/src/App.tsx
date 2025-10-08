@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import {
   Moon,
   Sun,
@@ -14,6 +14,11 @@ import HelpCenter from './components/HelpCenter';
 import ContactUs from './components/ContactUs';
 import CVGenerator from './components/CVGenerator';
 import Preloader from './components/Preloader';
+import { usePersistentState } from './hooks/usePersistentState';
+import InstallPrompt from './components/InstallPrompt';
+import { ViewToggle } from './components/ViewToggle';
+import { JobListItem } from './components/JobListItem';
+import { motion } from 'framer-motion';
 
 // Lazy load components for better performance
 const JobCard = lazy(() => import('./components/JobCard').then(module => ({ default: module.JobCard })));
@@ -31,12 +36,14 @@ const App: React.FC = () => {
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = usePersistentState<'card' | 'list'>('viewMode', 'card');
 
   // Theme management with system preference detection
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [isDark, setIsDark] = useState(false);
 
   const { jobs, loading, error, pagination, fetchJobs } = useJobs();
+  const routerLocation = useLocation();
 
   // System theme detection
   useEffect(() => {
@@ -168,6 +175,18 @@ const App: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [keyword, location, source, handleSearch]);
 
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [routerLocation.pathname]);
+
+  // Scroll to jobs section when jobs change (for pagination)
+  useEffect(() => {
+    const element = document.getElementById('jobs-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [jobs]);
 
   if (isLoading) {
     return <Preloader />;
@@ -181,7 +200,7 @@ const App: React.FC = () => {
         {/* Header */}
         <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-center items-center h-16">
+            <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -192,7 +211,7 @@ const App: React.FC = () => {
                   </p>
                 </div>
               </div>
-
+              <InstallPrompt />
             </div>
           </div>
         </header>
@@ -473,20 +492,33 @@ const App: React.FC = () => {
 
           {/* Jobs Grid - Full Width */}
           {!loading && !error && (
-            <>
+            <motion.div id="jobs-section" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+          <ViewToggle viewMode={viewMode} onToggle={() => setViewMode(viewMode === 'card' ? 'list' : 'card')} />
+
+          {/* Jobs Grid - Full Width */}
               {jobs.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-8">
-                  {jobs.map((job, index) => (
-                    <div
-                      key={job._id}
-                      className={`fade-in-up ${index < 5 ? `animation-delay-${index}00` : 'animation-delay-500'}`}
-                    >
-                      <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-2xl"></div>}>
-                        <JobCard job={job} />
+                viewMode === 'card' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-8">
+                    {jobs.map((job, index) => (
+                      <div
+                        key={job._id}
+                        className={`fade-in-up ${index < 5 ? `animation-delay-${index}00` : 'animation-delay-500'}`}
+                      >
+                        <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-2xl"></div>}>
+                          <JobCard job={job} />
+                        </Suspense>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4 mb-8">
+                    {jobs.map(job => (
+                      <Suspense key={job._id} fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-16 rounded-lg"></div>}>
+                        <JobListItem job={job} />
                       </Suspense>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )
               ) : (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-4">
@@ -513,7 +545,7 @@ const App: React.FC = () => {
                   />
                 </Suspense>
               )}
-            </>
+            </motion.div>
           )}
         </div>
         </main>

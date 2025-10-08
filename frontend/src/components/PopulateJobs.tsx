@@ -6,11 +6,16 @@ import { JobCard } from './JobCard';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { Sun, Moon, Monitor } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { usePersistentState } from '../hooks/usePersistentState';
+import { ViewToggle } from './ViewToggle';
+import { JobListItem } from './JobListItem';
 
 const PopulateJobs: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = usePersistentState<'card' | 'list'>('jobViewMode', 'card');
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -99,15 +104,21 @@ const PopulateJobs: React.FC = () => {
 
         {/* Jobs Grid - Full Width */}
         {!loading && !error && (
-          <>
+          <motion.div
+            key={viewMode}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
             {jobs.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-8">
+              <div className={viewMode === 'card' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-8' : 'flex flex-col space-y-4 mb-8'}>
                 {jobs.map((job, index) => (
                   <div
                     key={job._id}
                     className={`fade-in-up ${index < 5 ? `animation-delay-${index}00` : 'animation-delay-500'}`}
                   >
-                    <JobCard job={job} />
+                    {viewMode === 'card' ? <JobCard job={job} /> : <JobListItem job={job} />}
                   </div>
                 ))}
               </div>
@@ -124,7 +135,7 @@ const PopulateJobs: React.FC = () => {
                 </p>
               </div>
             )}
-          </>
+          </motion.div>
         )}
       </div>
       </main>
@@ -160,6 +171,7 @@ const PopulateJobs: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-3">
+              <ViewToggle viewMode={viewMode} onToggle={() => setViewMode(viewMode === 'card' ? 'list' : 'card')} />
               <button className="p-3 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110" title="Light mode">
                 <Sun className="w-5 h-5" />
               </button>
