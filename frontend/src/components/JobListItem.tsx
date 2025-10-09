@@ -20,14 +20,14 @@ export const JobListItem: React.FC<JobListItemProps> = memo(({ job }) => {
     >
       {/* Title */}
       <div className="flex-1 min-w-0 mb-2 sm:mb-0 sm:mr-4">
-        <h3 className="text-lg font-semibold truncate hover:text-blue-600 transition-colors" style={{ color: 'var(--card-text-color)' }}>
+        <h3 className="text-xl font-semibold truncate hover:text-blue-600 transition-colors" style={{ color: 'var(--card-text-color)' }}>
           {job.title}
         </h3>
       </div>
 
       {/* Company */}
       <div className="flex-1 min-w-0 mb-2 sm:mb-0 sm:mr-4">
-        <span className="text-sm truncate" style={{ color: 'var(--card-secondary-text-color)' }}>
+        <span className="text-base truncate" style={{ color: 'var(--card-secondary-text-color)' }}>
           {job.companyName}
         </span>
       </div>
@@ -47,11 +47,13 @@ export const JobListItem: React.FC<JobListItemProps> = memo(({ job }) => {
       </div>
 
       {/* Salary */}
-      <div className="flex-shrink-0">
-        <span className="text-sm font-medium" style={{ color: 'var(--card-text-color)' }}>
-          {job.salary || 'N/A'}
-        </span>
-      </div>
+      {job.salary && (
+        <div className="flex-shrink-0">
+          <span className="text-sm font-medium" style={{ color: 'var(--card-text-color)' }}>
+            {job.salary}
+          </span>
+        </div>
+      )}
     </div>
   );
 });
