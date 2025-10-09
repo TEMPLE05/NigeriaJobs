@@ -200,7 +200,7 @@ const App: React.FC = () => {
         {/* Header */}
         <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+            <div className="flex justify-center items-center h-16 relative">
               <div className="flex items-center">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -211,7 +211,9 @@ const App: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <InstallPrompt />
+              <div className="absolute right-0">
+                <InstallPrompt />
+              </div>
             </div>
           </div>
         </header>
