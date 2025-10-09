@@ -4,6 +4,7 @@ import { Download } from 'lucide-react';
 const InstallPrompt: React.FC = () => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -20,13 +21,19 @@ const InstallPrompt: React.FC = () => {
       setDeferredPrompt(null);
     };
 
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+
+    checkMobile();
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('resize', checkMobile);
 
     // Cleanup
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('resize', checkMobile);
     };
   }, []);
 
@@ -47,7 +54,7 @@ const InstallPrompt: React.FC = () => {
     console.log(`User response to install prompt: ${outcome}`);
   };
 
-  if (!isAvailable) return null;
+  if (!isAvailable || !isMobile) return null;
 
   return (
     <button
