@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Upload, Download, Wand2, Plus, Trash2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { CVData, Education, WorkExperience, Skill, PersonalInfo } from '../types/CV';
 import { cvApi } from '../services/api';
+import { usePDF } from 'react-to-pdf';
+import CVPDFTemplate from './CVPDFTemplate';
 
 const CVGenerator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'create' | 'enhance'>('create');
@@ -23,6 +25,7 @@ const CVGenerator: React.FC = () => {
   });
 
   const [targetJob, setTargetJob] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
   const [enhanceContent, setEnhanceContent] = useState(true);
   const [optimizeKeywords, setOptimizeKeywords] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -30,19 +33,30 @@ const CVGenerator: React.FC = () => {
   const [generatedCV, setGeneratedCV] = useState<CVData | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [analysisResults, setAnalysisResults] = useState<string | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  // PDF generation
+  const pdfRef = useRef<HTMLDivElement>(null);
+  const { toPDF, targetRef } = usePDF({
+    filename: `${generatedCV?.personalInfo.fullName || cvData.personalInfo.fullName || 'CV'}.pdf`,
+    page: { margin: 20 }
+  });
 
   const steps = [
     { title: 'Personal Info', description: 'Basic information about yourself' },
     { title: 'Education', description: 'Your educational background' },
     { title: 'Experience', description: 'Your work experience' },
     { title: 'Skills', description: 'Your skills and expertise' },
+    { title: 'Job Description', description: 'Paste the job description you want to apply for' },
     { title: 'Review', description: 'Review and generate your CV' }
   ];
 
   // Autosave functionality
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (activeTab === 'create' && currentStep < 4) {
+      if (activeTab === 'create' && currentStep < 5) {
         localStorage.setItem('cvDraft', JSON.stringify(cvData));
       }
     }, 30000); // Save every 30 seconds
@@ -72,7 +86,9 @@ const CVGenerator: React.FC = () => {
         return true; // Optional
       case 3: // Skills
         return cvData.skills.length > 0;
-      case 4: // Review
+      case 4: // Job Description
+        return true; // Optional
+      case 5: // Review
         return true;
       default:
         return false;
@@ -260,6 +276,37 @@ const CVGenerator: React.FC = () => {
     }
   };
 
+  const downloadClientPDF = async () => {
+    if (!generatedCV) return;
+
+    try {
+      await toPDF();
+    } catch (err) {
+      setError('Failed to generate PDF');
+    }
+  };
+
+  const analyzeJobFit = async () => {
+    if (!jobDescription.trim()) {
+      setAnalysisError('Please enter a job description first.');
+      return;
+    }
+
+    setAnalysisLoading(true);
+    setAnalysisError(null);
+    setAnalysisResults(null);
+
+    try {
+      const cvDataString = JSON.stringify(cvData);
+      const results = await cvApi.analyzeJob(jobDescription, cvDataString);
+      setAnalysisResults(results);
+    } catch (err) {
+      setAnalysisError(err instanceof Error ? err.message : 'Failed to analyze job fit');
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="text-center mb-8">
@@ -273,7 +320,7 @@ const CVGenerator: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="flex justify-center mb-8">
-        <div className="bg-gray-50 dark:bg-black p-1 rounded-2xl shadow-lg border border-gray-200 dark:border-white">
+        <div className="p-1 rounded-2xl shadow-lg border border-gray-200 dark:border-white" style={{ backgroundColor: 'var(--bg-color)' }}>
           <button
             onClick={() => {
               setActiveTab('create');
@@ -343,7 +390,7 @@ const CVGenerator: React.FC = () => {
               {/* Step Content */}
               {currentStep === 0 && (
                 /* Personal Information */
-                <div className="bg-gray-50 dark:bg-black rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-white">
+                <div className="rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-white" style={{ backgroundColor: 'var(--bg-color)' }}>
                   <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mr-3">
                       <span className="text-white font-bold">1</span>
@@ -443,7 +490,7 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 1 && (
                 /* Education */
-                <div className="bg-gray-50 dark:bg-black rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-white">
+                <div className="rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-white" style={{ backgroundColor: 'var(--bg-color)' }}>
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                       <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mr-3">
@@ -763,6 +810,60 @@ const CVGenerator: React.FC = () => {
               )}
 
               {currentStep === 4 && (
+                /* Job Description */
+                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-6">
+                    <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-white font-bold">5</span>
+                    </div>
+                    Job Description
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    Paste the full job description from the position you want to apply for. This will help tailor your CV to match the job requirements.
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Job Description (optional)
+                    </label>
+                    <textarea
+                      placeholder="Paste the job description here... Include requirements, responsibilities, and qualifications."
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      rows={12}
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={analyzeJobFit}
+                      disabled={analysisLoading || !jobDescription.trim()}
+                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-xl hover:from-teal-600 hover:to-cyan-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
+                    >
+                      {analysisLoading ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      ) : (
+                        <Wand2 className="w-5 h-5" />
+                      )}
+                      <span>{analysisLoading ? 'Analyzing...' : 'Analyze Job Fit'}</span>
+                    </button>
+                  </div>
+                  {analysisError && (
+                    <div className="mt-4 bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded">
+                      {analysisError}
+                    </div>
+                  )}
+                  {analysisResults && (
+                    <div className="mt-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-xl p-6">
+                      <h3 className="text-lg font-bold mb-4 text-green-800 dark:text-green-200">Job Fit Analysis & Suggestions</h3>
+                      <div className="text-green-700 dark:text-green-300 whitespace-pre-wrap">
+                        {analysisResults}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentStep === 5 && (
                 /* Review & Generate */
                 <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-6">
@@ -773,7 +874,7 @@ const CVGenerator: React.FC = () => {
                   </h2>
 
                   {/* Summary Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                     <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl p-4 text-white">
                       <div className="text-2xl font-bold">{cvData.personalInfo.fullName ? '✓' : '✗'}</div>
                       <div className="text-sm opacity-90">Personal Info</div>
@@ -789,6 +890,10 @@ const CVGenerator: React.FC = () => {
                     <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-4 text-white">
                       <div className="text-2xl font-bold">{cvData.skills.length}</div>
                       <div className="text-sm opacity-90">Skills</div>
+                    </div>
+                    <div className="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl p-4 text-white">
+                      <div className="text-2xl font-bold">{jobDescription ? '✓' : '—'}</div>
+                      <div className="text-sm opacity-90">Job Description</div>
                     </div>
                   </div>
 
@@ -878,6 +983,31 @@ const CVGenerator: React.FC = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* PDF Download Button */}
+                  {generatedCV && (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-100 dark:border-gray-700">
+                      <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Download Options</h3>
+                      <div className="flex gap-4">
+                        <button
+                          onClick={downloadClientPDF}
+                          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg"
+                        >
+                          <Download className="w-5 h-5" />
+                          <span>Download PDF</span>
+                        </button>
+                        {pdfUrl && (
+                          <button
+                            onClick={downloadPDF}
+                            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 shadow-lg"
+                          >
+                            <Download className="w-5 h-5" />
+                            <span>Download Enhanced PDF</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1024,6 +1154,11 @@ const CVGenerator: React.FC = () => {
 
         {/* Preview Section */}
         <div className="space-y-6">
+          {/* Hidden PDF Template */}
+          <div ref={targetRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+            {generatedCV && <CVPDFTemplate cvData={generatedCV} />}
+          </div>
+
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -1041,7 +1176,7 @@ const CVGenerator: React.FC = () => {
             </div>
 
             {generatedCV ? (
-              <div className="border rounded-lg p-6 bg-gray-50 dark:bg-gray-700">
+              <div className="border rounded-lg p-6" style={{ backgroundColor: 'var(--bg-color)' }}>
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                     {generatedCV.personalInfo.fullName}
