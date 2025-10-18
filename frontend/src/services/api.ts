@@ -74,5 +74,36 @@ export const cvApi = {
       responseType: 'blob',
     });
     return response.data;
+  },
+
+  // Analyze job and provide CV improvement suggestions
+  analyzeJob: async (jobDescription: string, cvData: string): Promise<string> => {
+    const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert CV consultant. Analyze the provided job description and CV data, then provide specific, actionable suggestions to improve the CV for better alignment with the job requirements.'
+        },
+        {
+          role: 'user',
+          content: `Job Description:\n${jobDescription}\n\nCV Data:\n${cvData}\n\nPlease provide detailed suggestions to improve this CV for this specific job.`
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0.7
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response.data.choices[0].message.content;
   }
 };

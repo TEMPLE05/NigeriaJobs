@@ -10,7 +10,6 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({ viewMode, onToggle }) =>
   const containerStyle = {
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: 'var(--card-bg-color)',
     borderRadius: '0.5rem',
     padding: '0.25rem'
   };
@@ -19,10 +18,9 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({ viewMode, onToggle }) =>
     padding: '0.5rem',
     borderRadius: '0.375rem',
     transition: 'all 0.2s',
+    border: isActive ? '1px solid var(--card-border-color)' : '1px solid transparent',
     ...(isActive ? {
-      backgroundColor: 'var(--card-bg-color)',
-      color: 'var(--card-text-color)',
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+      color: 'var(--card-text-color)'
     } : {
       color: 'var(--card-secondary-text-color)'
     })
