@@ -10,16 +10,19 @@
   "author": "Ogbonna Temple. C",
   "license": "ISC",
   "dependencies": {
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "mammoth": "^1.12.1",
     "mongoose": "^8.4.4",
+    "multer": "^2.2.0",
     "node-cron": "^3.0.3",
     "nodemon": "^3.1.4",
+    "pdf-parse": "^2.4.5",
     "puppeteer": "^22.12.0",
     "puppeteer-cluster": "^0.24.0",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "compression": "^1.7.4"
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }

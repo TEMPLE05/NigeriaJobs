@@ -1,19 +1,12 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 const HelpCenter: React.FC = () => {
-  // Theme management (simplified for this page)
-  const theme = 'system'; // Default to system
-
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  const getThemeIcon = () => {
-    return <Monitor className="w-5 h-5 text-gray-400" />;
-  };
 
   return (
     <div className="min-h-screen flex flex-col transition-all duration-500" style={{backgroundColor: 'var(--bg-color)'}}>
@@ -110,17 +103,7 @@ const HelpCenter: React.FC = () => {
               </Link>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <button className="p-3 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110" title="Light mode">
-                <Sun className="w-5 h-5" />
-              </button>
-              <button className="p-3 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110" title="Dark mode">
-                <Moon className="w-5 h-5" />
-              </button>
-              <button className="p-3 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110" title="System mode">
-                <Monitor className="w-5 h-5" />
-              </button>
-            </div>
+            <ThemeToggle />
           </div>
 
           <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>

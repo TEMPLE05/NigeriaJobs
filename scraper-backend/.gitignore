@@ -11,6 +11,9 @@
 # production
 /build
 
+# user-generated CVs — never commit real user data
+/uploads
+
 # misc
 .DS_Store
 .env

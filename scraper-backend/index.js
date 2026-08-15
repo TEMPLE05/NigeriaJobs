@@ -6,9 +6,28 @@ const compression = require('compression');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
+const mammoth = require('mammoth');
 require('dotenv').config();
 const { scrapeAllPlatforms } = require('./crawler');
 const Job = require('./model/job');
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+        const allowed = [
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only PDF and .docx files are supported'));
+        }
+    }
+});
 
 // Simple in-memory cache for performance
 const cache = new Map();
@@ -93,40 +112,61 @@ mongoose.connect(process.env.MONGODB_URI)
         console.error('Error connecting to MongoDB:', e.message);
     });
 
-const keywords = ['developer', 'engineer', 'software', 'frontend', 'fullstack', 'backend', 'data', 'scientist', 'designer']; 
-const locations = ['nigeria','remote','abuja','lagos','fulltime','parttime','onsite','hybrid']; 
+const keywords = ['developer', 'engineer', 'software', 'frontend', 'fullstack', 'backend', 'data', 'scientist', 'designer'];
+// Real geographic locations only. 'fulltime'/'parttime'/'onsite'/'hybrid' used to be
+// in this list, but they're job-type terms, not locations — sending them as the
+// `location` search param to LinkedIn/Jobberman doesn't filter anything meaningful,
+// it just burns scrape time. Job type is already classified per-job from its title/
+// duration text in classifyJobType(), so nothing is lost by dropping them here.
+const locations = ['nigeria', 'remote', 'abuja', 'lagos'];
 
-// 🔹 Manual scrape endpoint (so you don’t wait for cron)
-app.get('/api/scrape', async (req, res) => {
-    res.json({ message: 'Scraping started in background' });
-    (async () => {
-        try {
-            for (const keyword of keywords) {
-                for (const location of locations) {
+// Prevents a scrape cycle from starting while a previous one (cron or manual) is
+// still running. The full keyword x location matrix can take longer than the
+// hourly cron interval, and without this guard, overlapping runs would stack up
+// concurrent Puppeteer browsers and hammer the DB with duplicate writes.
+let isScrapeRunning = false;
+
+async function runFullScrapeCycle(trigger) {
+    if (isScrapeRunning) {
+        console.log(`Skipping ${trigger} scrape — a scrape cycle is already in progress`);
+        return;
+    }
+
+    isScrapeRunning = true;
+    console.log(`${trigger} scrape cycle started at`, new Date().toLocaleString());
+    try {
+        for (const keyword of keywords) {
+            for (const location of locations) {
+                try {
                     await scrapeAllPlatforms(keyword, location);
-                    console.log(`Scraped data for ${keyword} in ${location}`);
+                    console.log(`Scraped data for ${keyword} in ${location} at ${new Date().toLocaleTimeString()}`);
+                } catch (error) {
+                    console.error(`Failed to scrape data for ${keyword} in ${location}:`, error);
                 }
             }
-        } catch (error) {
-            console.error('Background scrape failed:', error.message);
         }
-    })();
+    } finally {
+        isScrapeRunning = false;
+        console.log(`${trigger} scrape cycle completed at`, new Date().toLocaleString());
+    }
+}
+
+// 🔹 Manual scrape endpoint (so you don’t wait for cron)
+app.get('/api/scrape', (req, res) => {
+    if (isScrapeRunning) {
+        return res.json({ message: 'A scrape is already in progress' });
+    }
+    res.json({ message: 'Scraping started in background' });
+    runFullScrapeCycle('Manual').catch(error => {
+        console.error('Background scrape failed:', error.message);
+    });
 });
 
 // Cron Function for scraping jobs hourly (runs every hour for testing)
-cron.schedule('0 * * * *', async () => {
-    console.log('Daily scraping cron job started at', new Date().toLocaleString());
-    for (const keyword of keywords) {
-        for (const location of locations) {
-            try {
-                await scrapeAllPlatforms(keyword, location);
-                console.log(`Scraped data for ${keyword} in ${location} at ${new Date().toLocaleTimeString()}`);
-            } catch (error) {
-                console.error(`Failed to scrape data for ${keyword} in ${location}:`, error);
-            }
-        }
-    }
-    console.log('Daily scraping cron job completed at', new Date().toLocaleString());
+cron.schedule('0 * * * *', () => {
+    runFullScrapeCycle('Hourly cron').catch(error => {
+        console.error('Cron scrape failed:', error.message);
+    });
 });
 
 // Cron function for deleting jobs older than a week from DB
@@ -478,47 +518,189 @@ app.post('/api/cv/generate', async (req, res) => {
 });
 
 // CV Enhancement endpoint (upload existing CV)
-app.post('/api/cv/enhance', async (req, res) => {
+app.post('/api/cv/enhance', (req, res) => {
+    upload.single('cvFile')(req, res, async (uploadError) => {
+        if (uploadError) {
+            return res.status(400).json({ success: false, message: uploadError.message });
+        }
+
+        try {
+            if (!req.file) {
+                return res.status(400).json({ success: false, message: 'No CV file was uploaded' });
+            }
+
+            const { targetJob, enhanceContent, optimizeKeywords } = req.body;
+
+            const text = await extractTextFromFile(req.file);
+            let parsedCV = parseCVText(text);
+
+            if (enhanceContent === 'true' || optimizeKeywords === 'true') {
+                parsedCV = enhanceCVLocally(
+                    parsedCV,
+                    targetJob,
+                    enhanceContent === 'true',
+                    optimizeKeywords === 'true'
+                );
+            }
+
+            // Generate PDF
+            const pdfBuffer = await generateCVPDF(parsedCV);
+            const pdfPath = path.join('uploads', `enhanced_cv_${Date.now()}.pdf`);
+            fs.writeFileSync(pdfPath, pdfBuffer);
+
+            res.json({
+                success: true,
+                cvData: parsedCV,
+                pdfUrl: `/api/cv/download/${path.basename(pdfPath)}`,
+                message: 'CV parsed and enhanced from your uploaded file. Automatic parsing is best-effort — please review the extracted details before downloading.',
+                aiUsed: false
+            });
+
+        } catch (error) {
+            console.error('Error enhancing CV:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to enhance CV',
+                error: error.message
+            });
+        }
+    });
+});
+
+// Extract raw text from an uploaded PDF or DOCX file
+async function extractTextFromFile(file) {
+    if (file.mimetype === 'application/pdf') {
+        const parser = new pdfParse.PDFParse({ data: file.buffer });
+        try {
+            const result = await parser.getText();
+            return result.text;
+        } finally {
+            await parser.destroy();
+        }
+    }
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const result = await mammoth.extractRawText({ buffer: file.buffer });
+        return result.value;
+    }
+    throw new Error('Unsupported file format. Please upload a PDF or .docx file.');
+}
+
+// Best-effort local parsing of raw CV text into structured CVData.
+// Regex/heuristics can't reliably reconstruct dates or job titles, so
+// experience/education sections are kept as free text for the user to review.
+function parseCVText(text) {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+    const emailMatch = text.match(/[\w.-]+@[\w.-]+\.\w+/);
+    const phoneMatch = text.match(/\+?\d[\d\s().-]{7,}\d/);
+    const linkedinMatch = text.match(/https?:\/\/(www\.)?linkedin\.com\/\S+/i);
+    const githubMatch = text.match(/https?:\/\/(www\.)?github\.com\/\S+/i);
+
+    // The name is usually the first short line that isn't contact info
+    const fullName = lines.find(l =>
+        l.length > 0 && l.length < 60 && !l.includes('@') && !/\d{3,}/.test(l)
+    ) || '';
+
+    const sectionHeaders = {
+        summary: /^(summary|profile|objective|professional summary)\s*:?$/i,
+        education: /^(education|academic background)\s*:?$/i,
+        workExperience: /^(experience|work experience|employment history|professional experience)\s*:?$/i,
+        skills: /^(skills|technical skills|core competencies)\s*:?$/i
+    };
+
+    const sections = {};
+    let currentSection = null;
+    for (const line of lines) {
+        const matchedKey = Object.keys(sectionHeaders).find(key => sectionHeaders[key].test(line));
+        if (matchedKey) {
+            currentSection = matchedKey;
+            sections[currentSection] = [];
+            continue;
+        }
+        if (currentSection) {
+            sections[currentSection].push(line);
+        }
+    }
+
+    const skills = (sections.skills || [])
+        .join(' ')
+        .split(/[,•|]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 1 && s.length < 40)
+        .slice(0, 20)
+        .map(name => ({ name, level: 'Intermediate', category: 'General' }));
+
+    return {
+        personalInfo: {
+            fullName,
+            email: emailMatch ? emailMatch[0] : '',
+            phone: phoneMatch ? phoneMatch[0].trim() : '',
+            address: '',
+            linkedin: linkedinMatch ? linkedinMatch[0] : '',
+            github: githubMatch ? githubMatch[0] : '',
+            website: '',
+            summary: (sections.summary || []).join(' ').slice(0, 800)
+        },
+        education: sections.education && sections.education.length > 0
+            ? [{ institution: '', degree: '', field: '', startDate: '', endDate: '', gpa: '', description: sections.education.join('\n') }]
+            : [],
+        workExperience: sections.workExperience && sections.workExperience.length > 0
+            ? [{ company: '', position: '', startDate: '', endDate: '', location: '', description: sections.workExperience.join('\n') }]
+            : [],
+        skills
+    };
+}
+
+// Job-fit analysis via OpenAI (server-side only — key never reaches the browser)
+app.post('/api/cv/analyze', async (req, res) => {
     try {
-        // For demo purposes, create a sample enhanced CV
-        const enhancedCV = {
-            personalInfo: {
-                fullName: "Enhanced CV",
-                email: "enhanced@example.com",
-                phone: "+1234567890",
-                address: "Enhanced Address",
-                summary: "This CV has been processed and enhanced with local algorithms for better presentation and keyword optimization."
+        const { jobDescription, cvData } = req.body;
+
+        if (!jobDescription || !cvData) {
+            return res.status(400).json({ error: 'jobDescription and cvData are required' });
+        }
+
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+            return res.status(503).json({ error: 'AI analysis is not configured on this server' });
+        }
+
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
             },
-            education: [],
-            workExperience: [],
-            skills: [
-                { name: "JavaScript", level: "Advanced", category: "Programming" },
-                { name: "React", level: "Advanced", category: "Frontend" },
-                { name: "Node.js", level: "Intermediate", category: "Backend" },
-                { name: "Python", level: "Intermediate", category: "Programming" }
-            ]
-        };
-
-        // Generate PDF
-        const pdfBuffer = await generateCVPDF(enhancedCV);
-        const pdfPath = path.join('uploads', `enhanced_cv_${Date.now()}.pdf`);
-        fs.writeFileSync(pdfPath, pdfBuffer);
-
-        res.json({
-            success: true,
-            cvData: enhancedCV,
-            pdfUrl: `/api/cv/download/${path.basename(pdfPath)}`,
-            message: 'CV enhanced successfully with local processing',
-            aiUsed: false
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are an expert CV consultant. Analyze the provided job description and CV data, then provide specific, actionable suggestions to improve the CV for better alignment with the job requirements.'
+                    },
+                    {
+                        role: 'user',
+                        content: `Job Description:\n${jobDescription}\n\nCV Data:\n${typeof cvData === 'string' ? cvData : JSON.stringify(cvData)}\n\nPlease provide detailed suggestions to improve this CV for this specific job.`
+                    }
+                ],
+                max_tokens: 1000,
+                temperature: 0.7
+            })
         });
 
+        if (!openaiResponse.ok) {
+            const errText = await openaiResponse.text();
+            console.error('OpenAI API error:', openaiResponse.status, errText);
+            return res.status(502).json({ error: 'AI analysis service failed' });
+        }
+
+        const data = await openaiResponse.json();
+        const result = data.choices?.[0]?.message?.content || '';
+
+        res.json({ result });
     } catch (error) {
-        console.error('Error enhancing CV:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to enhance CV',
-            error: error.message
-        });
+        console.error('Error analyzing job fit:', error);
+        res.status(500).json({ error: 'Failed to analyze job fit' });
     }
 });
 

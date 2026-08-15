@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import {
-  Moon,
-  Sun,
   Trash2,
-  Monitor,
   FileSearch,
 } from 'lucide-react';
 import { useJobs } from './hooks/useJobs';
@@ -18,6 +15,7 @@ import { usePersistentState } from './hooks/usePersistentState';
 import InstallPrompt from './components/InstallPrompt';
 import { ViewToggle } from './components/ViewToggle';
 import { JobListItem } from './components/JobListItem';
+import { ThemeToggle } from './components/ThemeToggle';
 import { motion } from 'framer-motion';
 
 // Lazy load components for better performance
@@ -38,74 +36,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = usePersistentState<'card' | 'list'>('viewMode', 'card');
 
-  // Theme management with system preference detection
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
-  const [isDark, setIsDark] = useState(false);
-
   const { jobs, loading, error, pagination, fetchJobs } = useJobs();
   const routerLocation = useLocation();
-
-  // System theme detection
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const updateTheme = () => {
-      const systemPrefersDark = mediaQuery.matches;
-      const shouldBeDark = theme === 'dark' || (theme === 'system' && systemPrefersDark);
-
-      setIsDark(shouldBeDark);
-
-      if (shouldBeDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    };
-
-    // Load saved theme preference
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-
-    // Initial theme application
-    updateTheme();
-
-    // Listen for system theme changes
-    mediaQuery.addEventListener('change', updateTheme);
-
-    return () => mediaQuery.removeEventListener('change', updateTheme);
-  }, [theme]);
-
-  // Theme set functions
-  const setLightTheme = () => {
-    setTheme('light');
-    localStorage.setItem('theme', 'light');
-  };
-
-  const setDarkTheme = () => {
-    setTheme('dark');
-    localStorage.setItem('theme', 'dark');
-  };
-
-  const setSystemTheme = () => {
-    setTheme('system');
-    localStorage.setItem('theme', 'system');
-  };
-
-  // Get theme icon
-  const getThemeIcon = () => {
-    if (theme === 'light') return <Sun className="w-5 h-5 text-yellow-500" />;
-    if (theme === 'dark') return <Moon className="w-5 h-5 text-blue-400" />;
-    return <Monitor className="w-5 h-5 text-gray-400" />;
-  };
-
-  // Get theme tooltip
-  const getThemeTooltip = () => {
-    if (theme === 'light') return "Switch to dark mode";
-    if (theme === 'dark') return "Use system preference";
-    return "Switch to light mode";
-  };
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -252,24 +184,11 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Search Section - Constrained */}
-          <div className="mb-8">
-            <div className="flex gap-4">
-              <input
-                type="text"
-                placeholder="Search jobs by keyword (e.g., engineer, developer, designer)"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                className="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
-              />
-            </div>
-          </div>
-
           {/* Filter Section - Constrained */}
           <div className="mb-8">
             <div className="rounded-2xl p-6 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--filter-border-color)', boxShadow: 'var(--filter-shadow)'}}>
-              <h3 className="text-xl font-bold mb-4" style={{color: 'var(--card-text-color)'}}>Filters</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <h3 className="text-xl font-bold mb-4" style={{color: 'var(--card-text-color)'}}>Search & Filter</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label htmlFor="keyword-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
                     Search Keywords
@@ -405,31 +324,25 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={handleCleanup}
-                      disabled={cleanupLoading}
-                      className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
-                    >
-                      {cleanupLoading ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                      <span>{cleanupLoading ? 'Cleaning...' : 'Clean Old Jobs'}</span>
-                    </button>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Remove jobs older than 7 days
-                    </span>
-                  </div>
-
-                </div>
+              <div className="flex justify-between items-center mt-4 gap-4">
+                <button
+                  onClick={handleCleanup}
+                  disabled={cleanupLoading}
+                  title="Remove jobs older than 7 days"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 text-sm font-medium disabled:opacity-50"
+                  style={{color: 'var(--card-secondary-text-color)'}}
+                >
+                  {cleanupLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  <span>{cleanupLoading ? 'Cleaning...' : 'Clean Old Jobs'}</span>
+                </button>
 
                 <div className="flex items-center space-x-3">
                   {cleanupMessage && (
-                    <div className="text-sm font-medium px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border">
+                    <div className="text-sm font-medium px-3 py-1 rounded-lg border" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)'}}>
                       {cleanupMessage}
                     </div>
                   )}
@@ -439,7 +352,7 @@ const App: React.FC = () => {
                       setLocation('');
                       setSource('All');
                     }}
-                    className="px-6 py-2 rounded-xl font-medium transition-all duration-300" style={{backgroundColor: '#dc2626', color: 'white'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                    className="px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 bg-red-600 hover:bg-red-700 text-white"
                   >
                     Clear Filters
                   </button>
@@ -585,29 +498,7 @@ const App: React.FC = () => {
                 </Link>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={setLightTheme}
-                  className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'light' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                  title="Light mode"
-                >
-                  <Sun className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={setDarkTheme}
-                  className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'dark' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                  title="Dark mode"
-                >
-                  <Moon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={setSystemTheme}
-                  className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'system' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                  title="System mode"
-                >
-                  <Monitor className="w-5 h-5" />
-                </button>
-              </div>
+              <ThemeToggle />
             </div>
 
             <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>
