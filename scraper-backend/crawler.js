@@ -38,6 +38,30 @@ function extractSalary(text) {
     return null;
 }
 
+// Strip volatile tracking params (trackingId, refId, position, pageNum, bb, xkcb, etc.)
+// so the same job posting produces the same URL every time it's re-scraped.
+// Without this, jobURL-based dedup treats every re-scrape as a brand new job.
+function normalizeJobURL(rawUrl, source) {
+    if (!rawUrl || rawUrl === 'N/A') return rawUrl;
+
+    try {
+        const url = new URL(rawUrl);
+
+        if (source === 'Indeed') {
+            const jk = url.searchParams.get('jk');
+            if (jk) {
+                return `${url.origin}/viewjob?jk=${jk}`;
+            }
+        }
+
+        // LinkedIn's /jobs/view/<id> path and Jobberman's listing path are
+        // already stable on their own — the query string is just tracking noise.
+        return `${url.origin}${url.pathname}`;
+    } catch {
+        return rawUrl;
+    }
+}
+
 function validateJobURL(jobURL, source) {
     if (!jobURL || jobURL === 'N/A') return false;
 
@@ -123,6 +147,7 @@ async function scrapeIndeed(page, keyword, location) {
                 job.keyword = keyword;
                 job.location = location;
                 job.source = 'Indeed';
+                job.jobURL = normalizeJobURL(job.jobURL, job.source);
                 job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
                 job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
 
@@ -236,6 +261,7 @@ async function scrapeLinkedIn(page, keyword, location) {
                 job.keyword = keyword;
                 job.location = location;
                 job.source = 'LinkedIn';
+                job.jobURL = normalizeJobURL(job.jobURL, job.source);
                 job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
                 job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
 
@@ -349,6 +375,7 @@ async function scrapeJobberman(page, keyword, location) {
                 job.keyword = keyword;
                 job.location = location;
                 job.source = 'Jobberman';
+                job.jobURL = normalizeJobURL(job.jobURL, job.source);
                 job.jobType = classifyJobType(job.jobDuration, job.title, job.jobLocation);
                 job.salary = extractSalary(job.salary) || extractSalary(job.title + ' ' + (job.jobDuration || ''));
 

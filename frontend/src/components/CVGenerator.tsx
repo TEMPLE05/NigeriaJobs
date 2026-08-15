@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Upload, Download, Wand2, Plus, Trash2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileText, Upload, Download, Wand2, Plus, Trash2, ChevronLeft, ChevronRight, Check, ArrowLeft } from 'lucide-react';
 import { CVData, Education, WorkExperience, Skill, PersonalInfo } from '../types/CV';
 import { cvApi } from '../services/api';
 import { usePDF } from 'react-to-pdf';
 import CVPDFTemplate from './CVPDFTemplate';
+import { ThemeToggle } from './ThemeToggle';
 
 const CVGenerator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'create' | 'enhance'>('create');
@@ -308,7 +310,38 @@ const CVGenerator: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen flex flex-col transition-all duration-500" style={{backgroundColor: 'var(--bg-color)'}}>
+      {/* Header */}
+      <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center items-center h-16">
+            <div className="flex items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  JobVista.NG
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+                  Find your dream job
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-grow overflow-y-auto">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back to Home */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-xl font-medium border transition-all duration-300 hover:scale-105"
+          style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)' }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold gradient-text mb-4">
           CV Generator
@@ -320,7 +353,7 @@ const CVGenerator: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="flex justify-center mb-8">
-        <div className="p-1 rounded-2xl shadow-lg border border-gray-200 dark:border-white" style={{ backgroundColor: 'var(--bg-color)' }}>
+        <div className="p-1 rounded-2xl shadow-lg border" style={{ backgroundColor: 'var(--bg-color)', borderColor: 'var(--card-border-color)' }}>
           <button
             onClick={() => {
               setActiveTab('create');
@@ -390,7 +423,7 @@ const CVGenerator: React.FC = () => {
               {/* Step Content */}
               {currentStep === 0 && (
                 /* Personal Information */
-                <div className="rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-white" style={{ backgroundColor: 'var(--bg-color)' }}>
+                <div className="rounded-2xl shadow-lg p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                   <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mr-3">
                       <span className="text-white font-bold">1</span>
@@ -490,7 +523,7 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 1 && (
                 /* Education */
-                <div className="rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-white" style={{ backgroundColor: 'var(--bg-color)' }}>
+                <div className="rounded-2xl shadow-lg p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                       <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mr-3">
@@ -516,10 +549,10 @@ const CVGenerator: React.FC = () => {
                     </div>
                   ) : (
                     cvData.education.map((edu, index) => (
-                      <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-4 border-2 border-gray-100 dark:border-gray-700 shadow-sm">
+                      <div key={index} className="rounded-xl p-6 mb-4 border-2 shadow-sm" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="filter-label">
                               Institution
                             </label>
                             <input
@@ -531,7 +564,7 @@ const CVGenerator: React.FC = () => {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="filter-label">
                               Degree
                             </label>
                             <input
@@ -618,7 +651,7 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 2 && (
                 /* Work Experience */
-                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+                <div className="rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                       <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mr-3">
@@ -644,10 +677,10 @@ const CVGenerator: React.FC = () => {
                     </div>
                   ) : (
                     cvData.workExperience.map((exp, index) => (
-                      <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-4 border-2 border-gray-100 dark:border-gray-700 shadow-sm">
+                      <div key={index} className="rounded-xl p-6 mb-4 border-2 shadow-sm" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="filter-label">
                               Company
                             </label>
                             <input
@@ -655,11 +688,11 @@ const CVGenerator: React.FC = () => {
                               placeholder="Tech Corp Inc."
                               value={exp.company}
                               onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
-                              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="filter-select"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="filter-label">
                               Position
                             </label>
                             <input
@@ -667,11 +700,11 @@ const CVGenerator: React.FC = () => {
                               placeholder="Software Engineer"
                               value={exp.position}
                               onChange={(e) => updateWorkExperience(index, 'position', e.target.value)}
-                              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="filter-select"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="filter-label">
                               Location
                             </label>
                             <input
@@ -679,11 +712,11 @@ const CVGenerator: React.FC = () => {
                               placeholder="San Francisco, CA"
                               value={exp.location}
                               onChange={(e) => updateWorkExperience(index, 'location', e.target.value)}
-                              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="filter-select"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="filter-label">
                               Start Date
                             </label>
                             <input
@@ -691,11 +724,11 @@ const CVGenerator: React.FC = () => {
                               placeholder="January 2020"
                               value={exp.startDate}
                               onChange={(e) => updateWorkExperience(index, 'startDate', e.target.value)}
-                              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="filter-select"
                             />
                           </div>
                           <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="filter-label">
                               End Date
                             </label>
                             <input
@@ -703,12 +736,12 @@ const CVGenerator: React.FC = () => {
                               placeholder="Present"
                               value={exp.endDate}
                               onChange={(e) => updateWorkExperience(index, 'endDate', e.target.value)}
-                              className="w-full md:w-1/2 px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              className="filter-select"
                             />
                           </div>
                         </div>
                         <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="filter-label">
                             Job Description
                           </label>
                           <textarea
@@ -716,7 +749,7 @@ const CVGenerator: React.FC = () => {
                             value={exp.description}
                             onChange={(e) => updateWorkExperience(index, 'description', e.target.value)}
                             rows={4}
-                            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                            className="filter-select resize-none"
                           />
                         </div>
                         <button
@@ -734,7 +767,7 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 3 && (
                 /* Skills */
-                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+                <div className="rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                       <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-3">
@@ -761,10 +794,10 @@ const CVGenerator: React.FC = () => {
                   ) : (
                     <div className="space-y-4">
                       {cvData.skills.map((skill, index) => (
-                        <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-100 dark:border-gray-700 shadow-sm">
+                        <div key={index} className="rounded-xl p-6 border-2 shadow-sm" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                           <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
                             <div className="flex-1">
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              <label className="filter-label">
                                 Skill Name *
                               </label>
                               <input
@@ -772,18 +805,18 @@ const CVGenerator: React.FC = () => {
                                 placeholder="JavaScript, Python, Project Management..."
                                 value={skill.name}
                                 onChange={(e) => updateSkill(index, 'name', e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="filter-select"
                                 required
                               />
                             </div>
                             <div className="md:w-48">
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              <label className="filter-label">
                                 Proficiency Level
                               </label>
                               <select
                                 value={skill.level}
                                 onChange={(e) => updateSkill(index, 'level', e.target.value as Skill['level'])}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="filter-select"
                                 title={`Skill level for ${skill.name}`}
                               >
                                 <option value="Beginner">Beginner</option>
@@ -811,7 +844,7 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 4 && (
                 /* Job Description */
-                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+                <div className="rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-6">
                     <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center mr-3">
                       <span className="text-white font-bold">5</span>
@@ -822,7 +855,7 @@ const CVGenerator: React.FC = () => {
                     Paste the full job description from the position you want to apply for. This will help tailor your CV to match the job requirements.
                   </p>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="filter-label">
                       Job Description (optional)
                     </label>
                     <textarea
@@ -830,7 +863,7 @@ const CVGenerator: React.FC = () => {
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
                       rows={12}
-                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                      className="filter-select resize-none"
                     />
                   </div>
                   <div className="mt-4">
@@ -865,7 +898,7 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 5 && (
                 /* Review & Generate */
-                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+                <div className="rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-6">
                     <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center mr-3">
                       <span className="text-white font-bold">5</span>
@@ -898,7 +931,7 @@ const CVGenerator: React.FC = () => {
                   </div>
 
                   {/* Enhancement Options */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-6 border-2 border-gray-100 dark:border-gray-700">
+                  <div className="rounded-xl p-6 mb-6 border-2" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                     <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Enhancement Options</h3>
                     <div className="mb-4 p-3 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg">
                       <p className="text-sm text-green-800 dark:text-green-200">
@@ -907,7 +940,7 @@ const CVGenerator: React.FC = () => {
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="filter-label">
                           Target Job Position (optional)
                         </label>
                         <input
@@ -915,7 +948,7 @@ const CVGenerator: React.FC = () => {
                           placeholder="Software Engineer, Product Manager..."
                           value={targetJob}
                           onChange={(e) => setTargetJob(e.target.value)}
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          className="filter-select"
                         />
                       </div>
                       <div className="flex items-center space-x-3">
@@ -946,7 +979,7 @@ const CVGenerator: React.FC = () => {
                   </div>
 
                   {/* Quick Preview */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-100 dark:border-gray-700">
+                  <div className="rounded-xl p-6 border-2" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                     <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Quick Preview</h3>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
@@ -986,7 +1019,7 @@ const CVGenerator: React.FC = () => {
 
                   {/* PDF Download Button */}
                   {generatedCV && (
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-100 dark:border-gray-700">
+                    <div className="rounded-xl p-6 border-2" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                       <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Download Options</h3>
                       <div className="flex gap-4">
                         <button
@@ -1050,7 +1083,7 @@ const CVGenerator: React.FC = () => {
             </>
           ) : (
             /* Enhance Existing CV Tab */
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <div className="rounded-lg shadow-lg p-6 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
               <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
                 Upload Your CV
               </h2>
@@ -1061,7 +1094,7 @@ const CVGenerator: React.FC = () => {
                 </p>
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,.docx"
                   onChange={handleFileUpload}
                   className="hidden"
                   id="cv-upload"
@@ -1073,6 +1106,9 @@ const CVGenerator: React.FC = () => {
                   <Upload className="w-4 h-4" />
                   <span>Choose File</span>
                 </label>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                  PDF or .docx only — parsing is best-effort, so review the extracted details afterward.
+                </p>
                 {uploadedFile && (
                   <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
                     Selected: {uploadedFile.name}
@@ -1085,7 +1121,7 @@ const CVGenerator: React.FC = () => {
           {activeTab === 'enhance' && (
             <>
               {/* Enhancement Options for Enhance Tab */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+              <div className="rounded-lg shadow-lg p-6 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
                 <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
                   Enhancement Options
                 </h2>
@@ -1159,7 +1195,7 @@ const CVGenerator: React.FC = () => {
             {generatedCV && <CVPDFTemplate cvData={generatedCV} />}
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="rounded-lg shadow-lg p-6 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 CV Preview
@@ -1176,7 +1212,7 @@ const CVGenerator: React.FC = () => {
             </div>
 
             {generatedCV ? (
-              <div className="border rounded-lg p-6" style={{ backgroundColor: 'var(--bg-color)' }}>
+              <div className="border rounded-lg p-6" style={{ backgroundColor: 'var(--bg-color)', borderColor: 'var(--card-border-color)' }}>
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                     {generatedCV.personalInfo.fullName}
@@ -1259,6 +1295,49 @@ const CVGenerator: React.FC = () => {
           </div>
         </div>
       </div>
+      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="flex-shrink-0 border-t" style={{backgroundColor: 'var(--footer-bg-color)', borderColor: 'var(--footer-border-color)'}}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-1.5">
+                <img src="/logo.app/in-site.png" alt="Logo" className="h-7 w-auto" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  JobVista.NG
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Job aggregation platform
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-6">
+              <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                Browse Jobs
+              </Link>
+              <Link to="/help" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                Help
+              </Link>
+              <Link to="/contact" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                About
+              </Link>
+            </div>
+
+            <ThemeToggle />
+          </div>
+
+          <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+              © 2025 JobVista.NG. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

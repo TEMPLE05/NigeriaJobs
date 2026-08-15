@@ -1,70 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 const ContactUs: React.FC = () => {
   // Update page title
   useEffect(() => {
     document.title = 'Contact Us - JobVista.NG';
   }, []);
-
-  // Theme management with system preference detection
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
-
-  // System theme detection
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const updateTheme = () => {
-      const systemPrefersDark = mediaQuery.matches;
-
-      console.log('Theme updated:', theme, 'systemPrefersDark:', systemPrefersDark);
-
-      if (theme === 'dark') {
-        document.documentElement.classList.remove('system-dark');
-        document.documentElement.classList.add('dark', 'manual-dark');
-      } else if (theme === 'system') {
-        document.documentElement.classList.remove('manual-dark');
-        if (systemPrefersDark) {
-          document.documentElement.classList.add('dark', 'system-dark');
-        } else {
-          document.documentElement.classList.remove('dark', 'system-dark');
-        }
-      } else {
-        document.documentElement.classList.remove('dark', 'manual-dark', 'system-dark');
-      }
-    };
-
-    // Load saved theme preference
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-
-    // Initial theme application
-    updateTheme();
-
-    // Listen for system theme changes
-    mediaQuery.addEventListener('change', updateTheme);
-
-    return () => mediaQuery.removeEventListener('change', updateTheme);
-  }, [theme]);
-
-  // Theme set functions
-  const setLightTheme = () => {
-    setTheme('light');
-    localStorage.setItem('theme', 'light');
-  };
-
-  const setDarkTheme = () => {
-    setTheme('dark');
-    localStorage.setItem('theme', 'dark');
-  };
-
-  const setSystemTheme = () => {
-    setTheme('system');
-    localStorage.setItem('theme', 'system');
-  };
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -365,29 +307,7 @@ const ContactUs: React.FC = () => {
               </Link>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={setLightTheme}
-                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'light' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                title="Light mode"
-              >
-                <Sun className="w-5 h-5" />
-              </button>
-              <button
-                onClick={setDarkTheme}
-                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'dark' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                title="Dark mode"
-              >
-                <Moon className="w-5 h-5" />
-              </button>
-              <button
-                onClick={setSystemTheme}
-                className={`p-3 rounded-lg transition-all duration-200 hover:scale-110 ${theme === 'system' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400 shadow-md' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                title="System mode"
-              >
-                <Monitor className="w-5 h-5" />
-              </button>
-            </div>
+            <ThemeToggle />
           </div>
 
           <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>
