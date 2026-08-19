@@ -31,7 +31,7 @@ export const ThemeToggle: React.FC = () => {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-200 hover:scale-105"
+        className="flex items-center justify-center w-[44px] h-[44px] rounded-full border transition-all duration-200 hover:scale-105"
         style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)' }}
         aria-label="Change theme"
         aria-expanded={open}
@@ -53,7 +53,7 @@ export const ThemeToggle: React.FC = () => {
               type="button"
               role="menuitem"
               onClick={() => { setTheme(mode); setOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors duration-150 hover:bg-blue-50 dark:hover:bg-gray-700"
+              className="w-full flex items-center gap-2 px-3 min-h-[44px] text-sm transition-colors duration-150 hover:bg-blue-50 dark:hover:bg-gray-700"
               style={{ color: 'var(--card-text-color)' }}
             >
               <Icon className="w-4 h-4" />
