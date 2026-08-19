@@ -85,40 +85,42 @@ const AppShell: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1">
+        {/* pb-20 (+ safe-area) reserves room so content never sits behind the
+            fixed mobile tab bar below; lg:pb-0 since desktop has no such bar */}
+        <main className="flex-1 pb-20 lg:pb-0" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
           <Outlet />
         </main>
 
-        {/* Mobile bottom nav bar */}
-        <footer className="lg:hidden flex-shrink-0 border-t" style={{ backgroundColor: 'var(--footer-bg-color)', borderColor: 'var(--footer-border-color)' }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between gap-2">
-              <nav className="flex items-center gap-1 flex-wrap">
-                {NAV_LINKS.map(({ to, label, icon: Icon }) => {
-                  const active = pathname === to;
-                  return (
-                    <Link
-                      key={to}
-                      to={to}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200"
-                      style={{
-                        backgroundColor: active ? 'var(--badge-bg-color)' : 'transparent',
-                        color: active ? 'var(--card-text-color)' : 'var(--card-secondary-text-color)',
-                      }}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {label}
-                    </Link>
-                  );
-                })}
-              </nav>
-              <ThemeToggle />
-            </div>
-            <p className="text-center text-xs mt-3" style={{ color: 'var(--card-secondary-text-color)' }}>
-              © 2025 JobVista.NG. All rights reserved.
-            </p>
+        {/* Mobile bottom tab bar — fixed (not a scrolling footer), so nav is
+            always one thumb-reach away regardless of scroll position. Sized
+            per standard tab-bar touch-target guidance (~56px+ per item). */}
+        <nav
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex items-stretch"
+          style={{
+            backgroundColor: 'var(--footer-bg-color)',
+            borderColor: 'var(--footer-border-color)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
+          aria-label="Primary"
+        >
+          {NAV_LINKS.map(({ to, label, icon: Icon }) => {
+            const active = pathname === to;
+            return (
+              <Link
+                key={to}
+                to={to}
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-14 text-center"
+                style={{ color: active ? 'var(--card-text-color)' : 'var(--card-secondary-text-color)' }}
+              >
+                <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
+                <span className="text-[11px] font-medium leading-none">{label}</span>
+              </Link>
+            );
+          })}
+          <div className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-14">
+            <ThemeToggle />
           </div>
-        </footer>
+        </nav>
       </div>
     </div>
   );
