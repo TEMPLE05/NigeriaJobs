@@ -1,121 +1,66 @@
-# Job Scraper
+# JobVista.NG — Backend
 
-## Overview
-
-Job Scraper is a Node.js-based application designed to scrape job listings from various platforms such as Indeed, LinkedIn, and Jobberman. It stores the scraped job data in a MongoDB database and provides an API to fetch job listings. The application also includes a cron job to regularly update the job listings and delete outdated data.
-
-## Features
-
-- Scrape job listings from Indeed, LinkedIn, and Jobberman.
-- Store job listings in a MongoDB database.
-- Fetch job listings via an API.
-- Regularly update job listings every day at midnight.
-- Delete job listings older than a week every Sunday at midnight.
+Express API that scrapes job listings from Indeed, LinkedIn, and Jobberman, stores them in MongoDB, and serves them to the frontend. Also handles CV generation/parsing and (optionally) AI job-fit analysis.
 
 ## Prerequisites
 
-- Node.js
-- MongoDB
-- npm or yarn
+- Node.js 18+
+- A MongoDB connection string (e.g. MongoDB Atlas)
 
-## Installation
+## Setup
 
-1. **Clone the repository:**
+```sh
+npm install
+cp .env.example .env
+```
 
-   ```sh
-   git clone https://github.com/davidwale/NodeJs-crawler.git
-   ```
+Fill in `.env`:
 
-2. **Install dependencies:**
+| Variable | Required | Description |
+|---|---|---|
+| `MONGODB_URI` | Yes | MongoDB connection string |
+| `PORT` | No | Defaults to `4000` |
+| `OPENAI_API_KEY` | No | Only needed for `/api/cv/analyze` (AI job-fit suggestions). Everything else works without it. |
 
-   ```sh
-   npm install
-   ```
+```sh
+npm start
+```
 
-   or
+`postinstall` runs `npx puppeteer browsers install chrome` automatically, since Puppeteer needs its own Chrome binary.
 
-   ```sh
-   yarn install
-   ```
+## API
 
-3. **Set up environment variables:**
+### Jobs
 
-   Create a `.env` file in the root directory and add the following:
+- `GET /api/jobs?keyword=&location=&source=&page=&limit=` — paginated, deduplicated job listings (only jobs from the last 7 days)
+- `GET /api/scrape` — manually trigger a scrape cycle in the background (no-ops if one is already running)
+- `DELETE /api/cleanup` — delete jobs older than 7 days
+- `DELETE /api/cleanup-duplicates` — remove duplicate postings (same title/company/location), keeping the newest
+- `GET /api/results` — latest 50 jobs, unfiltered
+- `GET /api/debug/jobs` — diagnostic listing with scrape age, for troubleshooting
 
-   ```sh
-   MONGODB_URI=your_mongodb_connection_string
-   ```
+### CV tools
 
-4. **Run the application:**
+- `POST /api/cv/generate` — build a CV PDF from structured form data, with optional local content enhancement
+- `POST /api/cv/enhance` — upload a PDF/DOCX (`multipart/form-data`, field `cvFile`); parses and restructures it, then generates an enhanced CV PDF
+- `POST /api/cv/analyze` — AI-powered job-fit suggestions given a job description + CV data (requires `OPENAI_API_KEY`)
+- `GET /api/cv/download/:filename` — download a generated CV PDF (deletes it from disk after download)
 
-   ```sh
-   npm start
-   ```
+## How it works
 
-   or
+### Scraping
 
-   ```sh
-   yarn start
-   ```
+`crawler.js` scrapes Indeed, LinkedIn, and Jobberman with `puppeteer-extra` + the stealth plugin. Scraped job URLs are normalized (stripping site-specific tracking query params like LinkedIn's `trackingId`/`refId` or Indeed's redirect blobs) before storage, so the same posting re-scraped later updates the existing record instead of creating a duplicate.
 
-## API Endpoints
+### Scheduling (`index.js`)
 
-- **Fetch job listings:**
+- **Hourly scrape** (`0 * * * *`) — runs the full keyword × location matrix across all three platforms. Guarded so a manual `/api/scrape` call and the cron can't run concurrently.
+- **Weekly deletion** (Sundays at midnight) — removes jobs older than 7 days.
 
-  ```
-  GET /api/jobs?keyword={keyword}&location={location}
-  ```
+### CV parsing
 
-  - **Query Parameters:**
-
-    - `keyword`: The job keyword to search for.
-    - `location`: The job location to search for.
-
-  - **Response:**
-    ```json
-    {
-      "jobs": [
-        {
-          "_id": "60c72b2f9b1d4b2d88f0e4c7",
-          "title": "Software Developer",
-          "companyName": "Tech Company",
-          "companyURL": "https://www.example.com",
-          "jobLocation": "Lagos, Nigeria",
-          "jobDuration": "Full-time",
-          "jobURL": "https://www.example.com/job/1",
-          "keyword": "developer",
-          "location": "nigeria",
-          "scrapedAt": "2024-06-25T12:34:56.789Z"
-        }
-      ]
-    }
-    ```
-
-## How It Works
-
-### Scraping Job Listings
-
-The application uses `puppeteer-extra` and `puppeteer-extra-plugin-stealth` to scrape job listings from Indeed, LinkedIn, and Jobberman. The scraping functions are defined in the `crawler.js` file and are called by the cron job scheduled in the `index.js` file.
-
-### Storing Job Listings
-
-The scraped job listings are stored in a MongoDB database. The `Job` model is defined in the `model/job.js` file.
-
-### Fetching Job Listings
-
-The job listings can be fetched via the `/api/jobs` endpoint. The endpoint accepts `keyword` and `location` as query parameters and returns job listings that match the criteria. If no exact matches are found, it returns similar job listings based on the keyword.
-
-### Cron Jobs
-
-Two cron jobs are scheduled in the `index.js` file:
-
-1. **Daily Scraping:** Runs every day at midnight to scrape job listings from all platforms.
-2. **Weekly Deletion:** Runs every Sunday at midnight to delete job listings older than a week.
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request if you have any improvements or bug fixes.
+Uploaded PDFs/DOCX files are parsed locally (`pdf-parse` / `mammoth`) — no AI required. Section headers (Education, Experience, Skills, Summary) are detected heuristically and lightly structured (dates, company/position where detectable). This is best-effort: review the extracted fields before downloading, since arbitrary resume layouts can't be perfectly reconstructed without AI.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT

@@ -1,83 +1,69 @@
-	﻿# NigeriaJobs
-	
-	Job Posting Aggregator for Nigerian Job Seekers
-	
-	
-	Project Overview
-	
-	
-	This project is a web-based job posting aggregator designed to address the challenges faced by Nigerian job seekers. It automatically collects and consolidates job listings from multiple Nigerian job boards, presenting them in a single, user-friendly platform. The application saves users time and effort by eliminating the need to browse multiple websites for new opportunities. 
-	Features
-	
-	
-	
-	Automated Web Scraping: Gathers job postings from major Nigerian job websites.
-	Centralized Database: Stores aggregated job listings in a structured MongoDB database.
-	Search and Filtering: Allows users to easily find jobs based on keywords, location, company, or category.
-	User-Friendly Interface: Provides a responsive and intuitive web interface for browsing job listings.
-	Automated Updates: A scheduled task ensures the job listings are kept fresh and up-to-date.
-	Robust Backend: Built with Node.js and Express to handle data scraping and serve the API.
-	Modern Frontend: Developed with React/Next.js and styled with Tailwind CSS for a modern, responsive design. 
-	Technologies
-	
-	
-	
-	Frontend: React / Next.js, Tailwind CSS
-	Backend: Node.js, Express
-	Database: MongoDB (via Mongoose)
-	Scraping: Axios, Cheerio, Puppeteer
-	Automation: node-cron
-	Version Control: Git, GitHub
-	
-	
-	
-	Project Structure
-	The repository follows a monorepo structure, housing both the frontend and backend of the application in separate directories for a clear separation of concerns.
-	
-	
-	job-aggregator/
-	│
-	├── .gitignore          # Excludes unnecessary files like node_modules and .env
-	├── README.md           # The file you are reading now
-	│
-	├── /frontend           # React/Next.js client-side application
-	│   ├── /components
-	│   ├── /pages
-	│   ├── /public
-	│   ├── /src
-	│   └── package.json
-	│
-	└── /backend            # Node.js/Express server with scraping logic
-	    ├── src/
-	    │   ├── /models       # Mongoose schemas for the database
-	    │   ├── /scrapers     # Logic for scraping different job sites
-	    │   ├── /routes       # API endpoints for fetching jobs
-	    │   └── server.js     # Entry point for the Express server
-	    └── package.json
-	
-	
-	How to Run Locally
-	Clone the repository:
-	sh
-	git clone https://github.com/your-username/job-aggregator.git
-	cd job-aggregator
-	Use code with caution.
-	
-	Set up the backend:
-	sh
-	cd backend
-	npm install
-	# Create a .env file with your MongoDB connection string
-	npm run dev
-	Use code with caution.
-	
-	Set up the frontend:
-	sh
-	cd ../frontend
-	npm install
-	npm start
-	Use code with caution.
-	
-	Contribution
-	This is an open-source project. Feedback, bug reports, and contributions are welcome. Please refer to the CONTRIBUTING.md file (if you choose to create one) for more details. 
-	
+# JobVista.NG
+
+A job aggregator for Nigerian job seekers. It scrapes listings from multiple Nigerian job boards, stores them in MongoDB, and serves them through a React frontend with search/filtering and a CV builder.
+
+## Features
+
+- **Automated scraping** — Indeed, LinkedIn, and Jobberman, on an hourly cron with an overlap guard so runs can't stack up
+- **Deduplication** — scraped URLs are normalized (stripping per-visit tracking params) so the same posting doesn't reappear as a "new" job on every scrape
+- **Search & filtering** — by keyword, location, and source
+- **CV Generator** — build a CV from scratch, or upload an existing PDF/DOCX to parse and enhance locally (no AI required); optional AI job-fit analysis via a secured backend endpoint
+- **Responsive UI** — persistent sidebar on desktop, fixed bottom tab bar on mobile, light/dark/system theme
+
+## Tech stack
+
+| | |
+|---|---|
+| Frontend | React, TypeScript, Tailwind CSS, React Router |
+| Backend | Node.js, Express, Mongoose |
+| Database | MongoDB |
+| Scraping | Puppeteer (`puppeteer-extra` + stealth plugin) |
+| CV parsing | `pdf-parse`, `mammoth` (DOCX) |
+| Scheduling | `node-cron` |
+
+## Project structure
+
+```
+job-aggregator/
+├── frontend/            React app (Create React App)
+│   ├── public/
+│   └── src/
+│       ├── components/
+│       ├── hooks/
+│       ├── services/     API client (services/api.ts)
+│       └── types/
+│
+└── scraper-backend/      Express API + scraper
+    ├── index.js           Server entry point, all API routes
+    ├── crawler.js         Site-specific scraping logic
+    ├── model/job.js        Mongoose schema
+    └── uploads/            Generated CV PDFs (gitignored, not persisted)
+```
+
+## Running locally
+
+**Backend:**
+```sh
+cd scraper-backend
+npm install
+cp .env.example .env   # then fill in MONGODB_URI and (optionally) OPENAI_API_KEY
+npm start
+```
+
+**Frontend** (in a separate terminal):
+```sh
+cd frontend
+npm install
+npm start
+```
+
+The frontend defaults to `http://localhost:4000` for the API; see `frontend/.env.example` if you need to point it elsewhere (e.g. a deployed backend).
+
+## Deployment
+
+- **Frontend**: deployed on Vercel. `npm run build` runs with `CI=true`, which treats ESLint warnings as build-breaking errors — run `CI=true npm run build` locally before pushing if you're unsure.
+- **Backend**: intended for a host that supports long-running Node processes (e.g. Render) since it runs Puppeteer and a persistent cron scheduler — not a serverless/edge target.
+
+## Contributing
+
+Feedback, bug reports, and contributions are welcome.
