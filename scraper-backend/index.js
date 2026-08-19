@@ -585,28 +585,151 @@ async function extractTextFromFile(file) {
     throw new Error('Unsupported file format. Please upload a PDF or .docx file.');
 }
 
-// Best-effort local parsing of raw CV text into structured CVData.
-// Regex/heuristics can't reliably reconstruct dates or job titles, so
-// experience/education sections are kept as free text for the user to review.
+const DATE_RANGE_RE = /((?:19|20)\d{2}|present)\s*(?:-|–|—|to)\s*((?:19|20)\d{2}|present)/i;
+const DEGREE_RE = /\b(B\.?Sc\.?|M\.?Sc\.?|Bachelor'?s?(?:\s+of\s+\w+)?|Master'?s?(?:\s+of\s+\w+)?|Ph\.?D\.?|HND|OND|Diploma|B\.?A\.?|M\.?A\.?|MBA)\b[^,;\n]*/i;
+const INSTITUTION_RE = /\b(university|polytechnic|institute|college|school)\b/i;
+
+// Removes a date-range substring from a line (rather than discarding the
+// whole line), since some layouts put a title and its date on one physical
+// line — a flex/table row like "Position    2020 - Present" extracts as a
+// single line with the two parts separated by whitespace/tabs, not a break.
+function stripDate(line) {
+    return line.replace(DATE_RANGE_RE, '').replace(/\s+/g, ' ').trim();
+}
+
+// Groups a section's lines into entries by closing one right after each
+// date-range line, once the entry has accumulated more than just that line.
+// This works well for layouts where the date is the last (or merged-first)
+// thing in an entry — "Degree / Institution / Dates" — which is common for
+// education. It's deliberately NOT used for work experience: experience
+// entries usually have description bullets trailing after the date
+// ("Position / Dates / bullet / bullet"), and closing there would fragment
+// a single job into bogus multi-entry garbage.
+function splitOnTrailingDate(sectionLines) {
+    const entries = [];
+    let current = [];
+    for (const line of sectionLines) {
+        current.push(line);
+        if (DATE_RANGE_RE.test(line) && current.length > 1) {
+            entries.push(current);
+            current = [];
+        }
+    }
+    if (current.length > 0) entries.push(current);
+    return entries;
+}
+
+function parseEducationEntry(entryLines) {
+    const text = entryLines.join(' ');
+    const dateMatch = text.match(DATE_RANGE_RE);
+    const contentLines = entryLines.map(stripDate).filter(Boolean);
+
+    const degreeLine = contentLines.find(l => DEGREE_RE.test(l));
+    const degreeMatch = degreeLine ? degreeLine.match(DEGREE_RE) : null;
+    const institutionLine = contentLines.find(l => INSTITUTION_RE.test(l)) || '';
+
+    return {
+        institution: institutionLine.trim(),
+        degree: degreeMatch ? degreeMatch[0].trim() : '',
+        field: '',
+        startDate: dateMatch ? dateMatch[1] : '',
+        endDate: dateMatch ? dateMatch[2] : '',
+        gpa: '',
+        description: entryLines.join('\n')
+    };
+}
+
+// Work experience is kept as a single entry rather than split, since reliably
+// telling "end of this job's bullets" from "start of the next job's title"
+// isn't safe with plain regex. Position/company/dates are pulled from the
+// first match found; the full section text always goes into description so
+// later jobs aren't lost, just not broken out into their own entry.
+function parseExperienceSection(sectionLines) {
+    if (sectionLines.length === 0) return [];
+
+    const dateMatch = sectionLines.join(' ').match(DATE_RANGE_RE);
+    const contentLines = sectionLines.map(stripDate).filter(Boolean);
+    const titleLine = contentLines[0] || '';
+
+    let position = titleLine;
+    let company = '';
+
+    const atMatch = titleLine.match(/^(.+?)\s+(?:at|@)\s+(.+)$/i);
+    if (atMatch) {
+        position = atMatch[1].trim();
+        company = atMatch[2].trim();
+    } else if (contentLines[1]) {
+        // Common two-line layout (e.g. this app's own CV template):
+        // "Position" then "Company - Location" / "Company, Location"
+        company = contentLines[1].split(/\s*[-,]\s*/)[0].trim();
+    }
+
+    return [{
+        company,
+        position,
+        startDate: dateMatch ? dateMatch[1] : '',
+        endDate: dateMatch ? dateMatch[2] : '',
+        location: '',
+        description: sectionLines.join('\n')
+    }];
+}
+
+// Splits a raw skills blob into individual entries. Most resumes separate
+// skills with commas/bullets/pipes, but PDFs generated from tightly-packed
+// "Name (Level)" spans (like this app's own CV template) can lose all
+// whitespace between entries — fall back to splitting right after each ")"
+// and strip the trailing "(Level)" so it isn't baked into the name.
+function extractSkillNames(sectionLines) {
+    const blob = sectionLines.join(' ');
+    let parts = blob.split(/[,•|;]/).map(s => s.trim()).filter(Boolean);
+
+    if (parts.length <= 1) {
+        // Split right after each ")" (consuming any whitespace that follows,
+        // but not the ")" itself) — covers both "A)B)" with no gap and "A) B)"
+        // with a space, which is what a row of separately-styled inline-block
+        // "Name (Level)" spans commonly extracts as.
+        parts = blob.split(/(?<=\))\s*(?=\S)/).map(s => s.trim()).filter(Boolean);
+    }
+
+    return parts
+        .map(s => s.replace(/\s*\([^)]*\)\s*$/, '').trim())
+        .filter(s => s.length > 1 && s.length < 40);
+}
+
+// Best-effort local parsing of raw CV text into structured CVData. Regex/
+// heuristics can't perfectly reconstruct a resume's layout, so this is
+// intentionally conservative: it structures what it can find high confidence
+// signals for (dates, degree keywords, institution/company names) and always
+// keeps the full section text in `description` so nothing gets silently lost.
 function parseCVText(text) {
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    // pdf-parse emits page-boundary markers like "-- 1 of 1 --" as real text lines.
+    // Left in, one can silently attach to whatever section happens to be last and
+    // corrupt it (e.g. pushing a skills blob over the length filter below).
+    const lines = text.split('\n').map(l => l.trim())
+        .filter(Boolean)
+        .filter(l => !/^--\s*\d+\s*of\s*\d+\s*--$/i.test(l));
 
     const emailMatch = text.match(/[\w.-]+@[\w.-]+\.\w+/);
-    const phoneMatch = text.match(/\+?\d[\d\s().-]{7,}\d/);
+    // Require either a leading '+' (international format) or at least 3
+    // delimited digit groups — a bare 2-group "2015 - 2019" style date range
+    // would otherwise match the older, looser version of this pattern.
+    const phoneMatch = text.match(/\+\d[\d\s().-]{7,}\d/)
+        || text.match(/\b\d{2,4}[\s.-]\d{2,4}[\s.-]\d{2,4}(?:[\s.-]\d{2,4})?\b/);
     const linkedinMatch = text.match(/https?:\/\/(www\.)?linkedin\.com\/\S+/i);
     const githubMatch = text.match(/https?:\/\/(www\.)?github\.com\/\S+/i);
 
-    // The name is usually the first short line that isn't contact info
-    const fullName = lines.find(l =>
-        l.length > 0 && l.length < 60 && !l.includes('@') && !/\d{3,}/.test(l)
-    ) || '';
-
     const sectionHeaders = {
-        summary: /^(summary|profile|objective|professional summary)\s*:?$/i,
-        education: /^(education|academic background)\s*:?$/i,
-        workExperience: /^(experience|work experience|employment history|professional experience)\s*:?$/i,
-        skills: /^(skills|technical skills|core competencies)\s*:?$/i
+        summary: /^(summary|profile|objective|professional summary|about me)\b/i,
+        education: /^(education|academic background|qualifications)\b/i,
+        workExperience: /^(experience|work experience|employment history|professional experience|work history)\b/i,
+        skills: /^(skills|technical skills|core competencies|core skills|key skills)\b/i
     };
+    const isHeaderLine = (line) => Object.values(sectionHeaders).some(re => re.test(line));
+
+    // The name is usually the first short line that isn't contact info or a section header
+    const fullName = lines.find(l =>
+        l.length > 0 && l.length < 60 && !l.includes('@') && !/\d{3,}/.test(l) && !isHeaderLine(l)
+    ) || '';
 
     const sections = {};
     let currentSection = null;
@@ -622,13 +745,17 @@ function parseCVText(text) {
         }
     }
 
-    const skills = (sections.skills || [])
-        .join(' ')
-        .split(/[,•|]/)
-        .map(s => s.trim())
-        .filter(s => s.length > 1 && s.length < 40)
+    const skills = extractSkillNames(sections.skills || [])
         .slice(0, 20)
         .map(name => ({ name, level: 'Intermediate', category: 'General' }));
+
+    const education = sections.education
+        ? splitOnTrailingDate(sections.education).map(parseEducationEntry)
+        : [];
+
+    const workExperience = sections.workExperience
+        ? parseExperienceSection(sections.workExperience)
+        : [];
 
     return {
         personalInfo: {
@@ -641,12 +768,8 @@ function parseCVText(text) {
             website: '',
             summary: (sections.summary || []).join(' ').slice(0, 800)
         },
-        education: sections.education && sections.education.length > 0
-            ? [{ institution: '', degree: '', field: '', startDate: '', endDate: '', gpa: '', description: sections.education.join('\n') }]
-            : [],
-        workExperience: sections.workExperience && sections.workExperience.length > 0
-            ? [{ company: '', position: '', startDate: '', endDate: '', location: '', description: sections.workExperience.join('\n') }]
-            : [],
+        education,
+        workExperience,
         skills
     };
 }
@@ -833,7 +956,8 @@ function generateCVHTML(cvData) {
             .section-title { font-size: 18px; font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; }
             .job-title { font-weight: bold; }
             .company { font-style: italic; color: #666; }
-            .date { float: right; color: #666; }
+            .date { color: #666; white-space: nowrap; }
+            .title-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
             .skill { display: inline-block; background: #f0f0f0; padding: 5px 10px; margin: 2px; border-radius: 3px; }
         </style>
     </head>
@@ -859,10 +983,12 @@ function generateCVHTML(cvData) {
             <div class="section-title">Work Experience</div>
             ${cvData.workExperience.map(exp => `
                 <div style="margin-bottom: 15px;">
-                    <div class="job-title">${exp.position}</div>
+                    <div class="title-row">
+                        <div class="job-title">${exp.position}</div>
+                        <div class="date">${exp.startDate} - ${exp.endDate}</div>
+                    </div>
                     <div class="company">${exp.company} - ${exp.location}</div>
-                    <div class="date">${exp.startDate} - ${exp.endDate}</div>
-                    <div style="clear: both; margin-top: 5px;">${exp.description}</div>
+                    <div style="margin-top: 5px;">${exp.description}</div>
                     ${exp.achievements ? `<ul>${exp.achievements.map(ach => `<li>${ach}</li>`).join('')}</ul>` : ''}
                 </div>
             `).join('')}
@@ -874,9 +1000,11 @@ function generateCVHTML(cvData) {
             <div class="section-title">Education</div>
             ${cvData.education.map(edu => `
                 <div style="margin-bottom: 15px;">
-                    <div class="job-title">${edu.degree} in ${edu.field}</div>
+                    <div class="title-row">
+                        <div class="job-title">${edu.degree} in ${edu.field}</div>
+                        <div class="date">${edu.startDate} - ${edu.endDate}</div>
+                    </div>
                     <div class="company">${edu.institution}</div>
-                    <div class="date">${edu.startDate} - ${edu.endDate}</div>
                     ${edu.gpa ? `<div>GPA: ${edu.gpa}</div>` : ''}
                     ${edu.description ? `<div>${edu.description}</div>` : ''}
                 </div>

@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Upload, Download, Wand2, Plus, Trash2, ChevronLeft, ChevronRight, Check, ArrowLeft } from 'lucide-react';
 import { CVData, Education, WorkExperience, Skill, PersonalInfo } from '../types/CV';
 import { cvApi } from '../services/api';
 import { usePDF } from 'react-to-pdf';
 import CVPDFTemplate from './CVPDFTemplate';
-import { ThemeToggle } from './ThemeToggle';
 
 const CVGenerator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'create' | 'enhance'>('create');
@@ -40,7 +39,6 @@ const CVGenerator: React.FC = () => {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // PDF generation
-  const pdfRef = useRef<HTMLDivElement>(null);
   const { toPDF, targetRef } = usePDF({
     filename: `${generatedCV?.personalInfo.fullName || cvData.personalInfo.fullName || 'CV'}.pdf`,
     page: { margin: 20 }
@@ -310,32 +308,11 @@ const CVGenerator: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col transition-all duration-500" style={{backgroundColor: 'var(--bg-color)'}}>
-      {/* Header */}
-      <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center h-16">
-            <div className="flex items-center">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  JobVista.NG
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-                  Find your dream job
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-grow overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back to Home */}
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back to Home — mobile-only, since the sidebar nav already covers desktop */}
         <Link
           to="/"
-          className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-xl font-medium border transition-all duration-300 hover:scale-105"
+          className="lg:hidden inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-xl font-medium border transition-all duration-300 hover:scale-105"
           style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)' }}
         >
           <ArrowLeft className="w-4 h-4" />
@@ -1296,49 +1273,6 @@ const CVGenerator: React.FC = () => {
         </div>
       </div>
       </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="flex-shrink-0 border-t" style={{backgroundColor: 'var(--footer-bg-color)', borderColor: 'var(--footer-border-color)'}}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-1.5">
-                <img src="/logo.app/in-site.png" alt="Logo" className="h-7 w-auto" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  JobVista.NG
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Job aggregation platform
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-6">
-              <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                Browse Jobs
-              </Link>
-              <Link to="/help" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                Help
-              </Link>
-              <Link to="/contact" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                About
-              </Link>
-            </div>
-
-            <ThemeToggle />
-          </div>
-
-          <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>
-            <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-              © 2025 JobVista.NG. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
   );
 };
 

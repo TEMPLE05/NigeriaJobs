@@ -1,9 +1,5 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import {
-  Trash2,
-  FileSearch,
-} from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { useJobs } from './hooks/useJobs';
 import { jobsApi } from './services/api';
 import PopulateJobs from './components/PopulateJobs';
@@ -11,20 +7,9 @@ import HelpCenter from './components/HelpCenter';
 import ContactUs from './components/ContactUs';
 import CVGenerator from './components/CVGenerator';
 import Preloader from './components/Preloader';
+import AppShell from './components/AppShell';
+import HomePage from './components/HomePage';
 import { usePersistentState } from './hooks/usePersistentState';
-import InstallPrompt from './components/InstallPrompt';
-import { ViewToggle } from './components/ViewToggle';
-import { JobListItem } from './components/JobListItem';
-import { ThemeToggle } from './components/ThemeToggle';
-import { motion } from 'framer-motion';
-
-// Lazy load components for better performance
-const JobCard = lazy(() => import('./components/JobCard').then(module => ({ default: module.JobCard })));
-const LoadingSpinner = lazy(() => import('./components/LoadingSpinner').then(module => ({ default: module.LoadingSpinner })));
-const ErrorMessage = lazy(() => import('./components/ErrorMessage').then(module => ({ default: module.ErrorMessage })));
-const Pagination = lazy(() => import('./components/Pagination').then(module => ({ default: module.Pagination })));
-
-
 
 const App: React.FC = () => {
   const [keyword, setKeyword] = useState('');
@@ -37,29 +22,66 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = usePersistentState<'card' | 'list'>('viewMode', 'card');
 
   const { jobs, loading, error, pagination, fetchJobs } = useJobs();
-  const routerLocation = useLocation();
+  const mountTimeRef = useRef(Date.now());
+  const retryCountRef = useRef(0);
 
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Preloader timing
   useEffect(() => {
     document.body.classList.add('preloader-active');
-    const timer = setTimeout(() => {
-      const preloader = document.querySelector('.preloader');
-      preloader?.classList.add('hidden');
-      setTimeout(() => {
-        setIsLoading(false);
-        document.body.classList.remove('preloader-active');
-      }, 600);
-    }, 3000);
-    return () => {
-      clearTimeout(timer);
-      document.body.classList.remove('preloader-active');
-    };
   }, []);
+
+  // Preloader stays up (and keeps pulsing via its own animation) until the
+  // first job fetch actually succeeds, auto-retrying a few times if the
+  // network is slow or the request fails — instead of the old fixed 3s
+  // timer, which forced the same wait regardless of whether data was ready.
+  // `pagination` only gets set after a successful response, so it's an
+  // unambiguous "first load truly completed" signal (unlike `loading`/
+  // `error`, whose initial values look identical to "already succeeded").
+  // If retries run out, it dismisses anyway so the user isn't stuck behind
+  // the splash forever — the app shell's own error/retry UI takes over.
+  useEffect(() => {
+    if (!isLoading) return;
+
+    // The "Your Next Career" reveal (BlurText's staggered word animation plus
+    // the outer entrance transition) takes ~1.3-1.5s to fully settle — this
+    // floor needs to clear that so a fast connection doesn't cut it off
+    // mid-animation, while still being well under the old fixed 3.6s wait.
+    const MIN_DISPLAY_MS = 2200;
+    const MAX_RETRIES = 5;
+    const RETRY_DELAY_MS = 2500;
+
+    let timer: ReturnType<typeof setTimeout>;
+
+    const dismiss = () => {
+      const elapsed = Date.now() - mountTimeRef.current;
+      timer = setTimeout(() => {
+        document.querySelector('.preloader')?.classList.add('hidden');
+        setTimeout(() => {
+          setIsLoading(false);
+          document.body.classList.remove('preloader-active');
+        }, 600);
+      }, Math.max(MIN_DISPLAY_MS - elapsed, 0));
+    };
+
+    if (pagination) {
+      dismiss();
+    } else if (!loading && error) {
+      if (retryCountRef.current < MAX_RETRIES) {
+        retryCountRef.current += 1;
+        timer = setTimeout(() => {
+          fetchJobs(undefined, undefined, source, 1, 8);
+        }, RETRY_DELAY_MS);
+      } else {
+        dismiss();
+      }
+    }
+
+    return () => clearTimeout(timer);
+  }, [isLoading, loading, error, pagination, fetchJobs, source]);
 
   // Initial load
   useEffect(() => {
@@ -97,7 +119,6 @@ const App: React.FC = () => {
     }
   };
 
-
   // Debounced search
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -106,11 +127,6 @@ const App: React.FC = () => {
 
     return () => clearTimeout(timeoutId);
   }, [keyword, location, source, handleSearch]);
-
-  // Scroll to top on route change
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [routerLocation.pathname]);
 
   // Scroll to jobs section when jobs change (for pagination)
   useEffect(() => {
@@ -125,398 +141,39 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="relative">
-      <Routes>
-        <Route path="/" element={
-          <div className="w-full min-h-screen min-h-[100dvh] flex flex-col" style={{backgroundColor: 'var(--bg-color)'}}>
-        {/* Header */}
-        <header className="flex-shrink-0 border-b shadow-sm" style={{backgroundColor: 'var(--header-bg-color)', borderColor: 'var(--header-border-color)'}}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-center items-center h-16 relative">
-              <div className="flex items-center">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    JobVista.NG
-                  </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-                    Find your dream job
-                  </p>
-                </div>
-              </div>
-              <div className="absolute right-0">
-                <InstallPrompt />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-grow flex-1 overflow-y-auto">
-
-        {/* Hero Section - Constrained */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center mb-12 relative">
-            <div className="absolute inset-0 rounded-3xl opacity-30" style={{background: 'var(--hero-gradient)'}}></div>
-            <div className="relative">
-              <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-gray-900 dark:text-white">
-                Find Your Next
-                <span className="block text-6xl md:text-8xl font-extrabold text-gray-900 dark:text-white">
-                  Career
-                </span>
-              </h2>
-              <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Discover thousands of job opportunities from top Nigerian companies, all in one place
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                  <div className="status-dot-green"></div>
-                  <span className="text-sm">Live Job Updates</span>
-                </div>
-                <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                  <div className="status-dot-blue"></div>
-                  <span className="text-sm">Real-time Search</span>
-                </div>
-                <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                  <div className="status-dot-purple"></div>
-                  <span className="text-sm">Verified Companies</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Section - Constrained */}
-          <div className="mb-8">
-            <div className="rounded-2xl p-6 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--filter-border-color)', boxShadow: 'var(--filter-shadow)'}}>
-              <h3 className="text-xl font-bold mb-4" style={{color: 'var(--card-text-color)'}}>Search & Filter</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="keyword-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
-                    Search Keywords
-                  </label>
-                  <input
-                    id="keyword-filter"
-                    type="text"
-                    placeholder="e.g., developer, engineer, designer"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="location-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
-                    Job Location
-                  </label>
-                  <input
-                    id="location-filter"
-                    type="text"
-                    placeholder="e.g., lagos, abuja, remote"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    list="locations"
-                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
-                  />
-                  <datalist id="locations">
-                    <option value="Lagos" />
-                    <option value="Abuja" />
-                    <option value="Port Harcourt" />
-                    <option value="Kano" />
-                    <option value="Ibadan" />
-                    <option value="Kaduna" />
-                    <option value="Enugu" />
-                    <option value="Benin City" />
-                    <option value="Warri" />
-                    <option value="Calabar" />
-                    <option value="Owerri" />
-                    <option value="Abeokuta" />
-                    <option value="Jos" />
-                    <option value="Ilorin" />
-                    <option value="Sokoto" />
-                    <option value="Onitsha" />
-                    <option value="Maiduguri" />
-                    <option value="Zaria" />
-                    <option value="Aba" />
-                    <option value="Uyo" />
-                    <option value="Yola" />
-                    <option value="Akure" />
-                    <option value="Osogbo" />
-                    <option value="Bauchi" />
-                    <option value="Minna" />
-                    <option value="Makurdi" />
-                    <option value="Gombe" />
-                    <option value="Jalingo" />
-                    <option value="Damaturu" />
-                    <option value="Katsina" />
-                    <option value="Lokoja" />
-                    <option value="Abakaliki" />
-                    <option value="Umuahia" />
-                    <option value="Awka" />
-                    <option value="Asaba" />
-                    <option value="Lafia" />
-                    <option value="Dutse" />
-                    <option value="Birnin Kebbi" />
-                    <option value="Gusau" />
-                    <option value="Suleja" />
-                    <option value="Wukari" />
-                    <option value="Idah" />
-                    <option value="Nsukka" />
-                    <option value="Ogbomosho" />
-                    <option value="Ijebu Ode" />
-                    <option value="Sagamu" />
-                    <option value="Ikorodu" />
-                    <option value="Epe" />
-                    <option value="Badagry" />
-                    <option value="Ikeja" />
-                    <option value="Agege" />
-                    <option value="Mushin" />
-                    <option value="Oshodi" />
-                    <option value="Surulere" />
-                    <option value="Yaba" />
-                    <option value="Lekki" />
-                    <option value="Victoria Island" />
-                    <option value="Ikoyi" />
-                    <option value="Apapa" />
-                    <option value="Marina" />
-                    <option value="Opebi" />
-                    <option value="Alausa" />
-                    <option value="Ikeja GRA" />
-                    <option value="Wuse" />
-                    <option value="Maitama" />
-                    <option value="Asokoro" />
-                    <option value="Garki" />
-                    <option value="Jabi" />
-                    <option value="Utako" />
-                    <option value="Wuye" />
-                    <option value="Gwarinpa" />
-                    <option value="Kubwa" />
-                    <option value="Nyanya" />
-                    <option value="Mararaba" />
-                    <option value="Karu" />
-                    <option value="Abaji" />
-                    <option value="Bwari" />
-                    <option value="Kwali" />
-                    <option value="Gwagwalada" />
-                    <option value="Kuje" />
-                    <option value="Remote" />
-                    <option value="Hybrid" />
-                    <option value="fulltime" />
-                    <option value="parttime" />
-                    <option value="onsite" />
-                  </datalist>
-                </div>
-
-
-                <div>
-                  <label htmlFor="source-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
-                    Job Source
-                  </label>
-                  <select
-                    id="source-filter"
-                    value={source}
-                    onChange={(e) => setSource(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
-                  >
-                    <option value="All">All Sources</option>
-                    <option value="Indeed">Indeed</option>
-                    <option value="LinkedIn">LinkedIn</option>
-                    <option value="Jobberman">Jobberman</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center mt-4 gap-4">
-                <button
-                  onClick={handleCleanup}
-                  disabled={cleanupLoading}
-                  title="Remove jobs older than 7 days"
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 text-sm font-medium disabled:opacity-50"
-                  style={{color: 'var(--card-secondary-text-color)'}}
-                >
-                  {cleanupLoading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                  <span>{cleanupLoading ? 'Cleaning...' : 'Clean Old Jobs'}</span>
-                </button>
-
-                <div className="flex items-center space-x-3">
-                  {cleanupMessage && (
-                    <div className="text-sm font-medium px-3 py-1 rounded-lg border" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)'}}>
-                      {cleanupMessage}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => {
-                      setKeyword('');
-                      setLocation('');
-                      setSource('All');
-                    }}
-                    className="px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    Clear Filters
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Job Results - Full Width */}
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h3 className="text-3xl font-bold mb-2" style={{color: 'var(--card-text-color)'}}>
-              Job Opportunities
-            </h3>
-            <div className="text-lg" style={{color: 'var(--card-secondary-text-color)'}}>
-              {loading ? (
-                <span className="flex items-center">
-                  <div className="search-loading-spinner"></div>
-                  Searching...
-                </span>
-              ) : (
-                pagination ?
-                  `Showing ${jobs.length} of ${pagination.totalJobs} jobs (Page ${pagination.currentPage} of ${pagination.totalPages})` :
-                  `${jobs.length} jobs found`
-              )}
-            </div>
-          </div>
-
-          {/* Error State */}
-          {error && (
-            <div className="max-w-7xl mx-auto">
-              <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg"></div>}>
-                <ErrorMessage
-                  message={error}
-                  onRetry={() => {
-                    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, currentPage, 8);
-                  }}
-                />
-              </Suspense>
-            </div>
-          )}
-
-          {/* Loading State */}
-          {loading && (
-            <div className="max-w-7xl mx-auto">
-              <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg"></div>}>
-                <LoadingSpinner />
-              </Suspense>
-            </div>
-          )}
-
-          {/* Jobs Grid - Full Width */}
-          {!loading && !error && (
-            <motion.div id="jobs-section" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-          <ViewToggle viewMode={viewMode} onToggle={() => setViewMode(viewMode === 'card' ? 'list' : 'card')} />
-
-          {/* Jobs Grid - Full Width */}
-              {jobs.length > 0 ? (
-                viewMode === 'card' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-8">
-                    {jobs.map((job, index) => (
-                      <div
-                        key={job._id}
-                        className={`fade-in-up ${index < 5 ? `animation-delay-${index}00` : 'animation-delay-500'}`}
-                      >
-                        <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-96 rounded-2xl"></div>}>
-                          <JobCard job={job} />
-                        </Suspense>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4 mb-8">
-                    {jobs.map(job => (
-                      <Suspense key={job._id} fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-16 rounded-lg"></div>}>
-                        <JobListItem job={job} />
-                      </Suspense>
-                    ))}
-                  </div>
-                )
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 mb-4">
-                    <FileSearch className="w-16 h-16 mx-auto" />
-                  </div>
-                  <h3 className="text-xl font-medium mb-2" style={{color: 'var(--card-text-color)'}}>
-                    No jobs found
-                  </h3>
-                  <p style={{color: 'var(--card-secondary-text-color)'}}>
-                    Try adjusting your search criteria or filters
-                  </p>
-                </div>
-              )}
-
-              {/* Pagination */}
-              {pagination && (
-                <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-12 rounded-lg"></div>}>
-                  <Pagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    hasNextPage={pagination.hasNextPage}
-                    hasPrevPage={pagination.hasPrevPage}
-                    onPageChange={handlePageChange}
-                  />
-                </Suspense>
-              )}
-            </motion.div>
-          )}
-        </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="flex-shrink-0 border-t" style={{backgroundColor: 'var(--footer-bg-color)', borderColor: 'var(--footer-border-color)'}}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-1.5">
-                  <img src="/logo.app/in-site.png" alt="Logo" className="h-7 w-auto" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                    JobVista.NG
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Job aggregation platform
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-6">
-                <Link to="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Browse Jobs
-                </Link>
-                <Link to="/cv-generator" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  CV Generator
-                </Link>
-                <Link to="/help" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Help
-                </Link>
-                <Link to="/contact" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  About
-                </Link>
-              </div>
-
-              <ThemeToggle />
-            </div>
-
-            <div className="border-t pt-4 mt-4" style={{borderColor: 'var(--footer-border-color)'}}>
-              <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-                © 2025 JobVista.NG. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </footer>
-          </div>
-        } />
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route
+          path="/"
+          element={
+            <HomePage
+              keyword={keyword}
+              setKeyword={setKeyword}
+              location={location}
+              setLocation={setLocation}
+              source={source}
+              setSource={setSource}
+              cleanupLoading={cleanupLoading}
+              cleanupMessage={cleanupMessage}
+              handleCleanup={handleCleanup}
+              jobs={jobs}
+              loading={loading}
+              error={error}
+              pagination={pagination}
+              currentPage={currentPage}
+              fetchJobs={fetchJobs}
+              handlePageChange={handlePageChange}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+            />
+          }
+        />
         <Route path="/cv-generator" element={<CVGenerator />} />
         <Route path="/populate-jobs" element={<PopulateJobs />} />
         <Route path="/help" element={<HelpCenter />} />
         <Route path="/contact" element={<ContactUs />} />
-      </Routes>
-
-    </div>
+      </Route>
+    </Routes>
   );
 };
 

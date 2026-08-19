@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { Job, JobResponse } from '../types/Job';
-import { CVData, CVGenerationRequest, CVEnhancementRequest, CVResponse } from '../types/CV';
+import { JobResponse } from '../types/Job';
+import { CVGenerationRequest, CVResponse } from '../types/CV';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 
