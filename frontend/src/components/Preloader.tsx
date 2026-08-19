@@ -19,6 +19,11 @@ const Preloader: React.FC = () => {
           direction="top"
           className="preloader-text"
         />
+        <div className="preloader-dots" aria-hidden="true">
+          <span className="preloader-dot" />
+          <span className="preloader-dot" />
+          <span className="preloader-dot" />
+        </div>
       </motion.div>
     </div>
   );

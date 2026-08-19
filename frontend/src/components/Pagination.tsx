@@ -105,7 +105,8 @@ export const Pagination: React.FC<PaginationProps> = ({
   return (
     <nav
       ref={paginationRef}
-      className="flex flex-col items-center mt-8 px-2 sm:px-4 gap-4"
+      className="flex flex-col items-center mt-8 mb-4 p-6 rounded-2xl border shadow-lg gap-4"
+      style={{ backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--filter-border-color)', boxShadow: 'var(--filter-shadow)' }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -113,8 +114,8 @@ export const Pagination: React.FC<PaginationProps> = ({
       aria-label="Pagination Navigation"
     >
       {/* Mobile: Enhanced Page Jump Input at top */}
-      <div className="flex sm:hidden items-center justify-center space-x-3 w-full bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
-        <label htmlFor="mobile-page-jump" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="flex sm:hidden items-center justify-center space-x-3 w-full rounded-lg p-3" style={{ backgroundColor: 'var(--badge-bg-color)' }}>
+        <label htmlFor="mobile-page-jump" className="text-sm font-medium" style={{ color: 'var(--card-secondary-text-color)' }}>
           Jump to page:
         </label>
         <div className="flex items-center space-x-2">
@@ -180,14 +181,12 @@ export const Pagination: React.FC<PaginationProps> = ({
             <button
               key={page}
               onClick={() => onPageChange(page)}
-              className={`px-3 sm:px-3 py-3 sm:py-2 text-sm font-medium rounded-lg border transition-all duration-200 touch-manipulation active:scale-95 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                page === currentPage
-                  ? 'font-bold shadow-sm ring-2 ring-blue-500 ring-offset-2'
-                  : 'hover:shadow-md'
+              className={`px-3 sm:px-3 py-3 sm:py-2 text-sm font-medium rounded-lg border-2 transition-all duration-200 touch-manipulation active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                page === currentPage ? 'font-bold shadow-sm' : 'hover:shadow-md'
               }`}
               style={{
                 backgroundColor: page === currentPage ? 'var(--badge-bg-color)' : 'var(--card-bg-color)',
-                borderColor: 'var(--badge-border-color)',
+                borderColor: page === currentPage ? '#2563eb' : 'var(--badge-border-color)',
                 color: 'var(--card-text-color)'
               }}
               aria-label={`Go to page ${page}`}
@@ -216,8 +215,8 @@ export const Pagination: React.FC<PaginationProps> = ({
         </button>
 
         {/* Desktop Page Jump - On the side */}
-        <div className="hidden sm:flex items-center space-x-2 ml-4 pl-4 border-l border-gray-200 dark:border-gray-600">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Go to page:</span>
+        <div className="hidden sm:flex items-center space-x-2 ml-4 pl-4 border-l" style={{ borderColor: 'var(--card-border-color)' }}>
+          <span className="text-sm" style={{ color: 'var(--card-secondary-text-color)' }}>Go to page:</span>
           <input
             type="number"
             min="1"
@@ -226,7 +225,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             onChange={(e) => setJumpToPage(e.target.value)}
             onKeyPress={handlePageJumpKeyPress}
             placeholder={`1-${totalPages}`}
-            className="w-16 px-3 py-2 text-sm text-center border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            className="w-20 px-3 py-2 text-sm text-center border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             style={{
               backgroundColor: 'var(--card-bg-color)',
               borderColor: 'var(--badge-border-color)',
@@ -254,7 +253,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       </div>
 
       {/* Mobile Page Info */}
-      <div className="flex sm:hidden items-center justify-center text-xs text-gray-500 dark:text-gray-400 mt-2">
+      <div className="flex sm:hidden items-center justify-center text-xs mt-2" style={{ color: 'var(--card-secondary-text-color)' }}>
         Page {currentPage} of {totalPages}
       </div>
     </nav>
