@@ -1,46 +1,37 @@
-# Getting Started with Create React App
+# JobVista.NG — Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React app (Create React App + TypeScript + Tailwind CSS) for browsing scraped job listings and building/enhancing CVs.
 
-## Available Scripts
+## Setup
 
-In the project directory, you can run:
+```sh
+npm install
+cp .env.example .env   # only needed if not using the default localhost:4000 backend
+npm start
+```
 
-### `npm start`
+Runs on [http://localhost:3000](http://localhost:3000) and expects the backend (`../scraper-backend`) running on `http://localhost:4000` by default.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Environment variables
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+| Variable | Required | Description |
+|---|---|---|
+| `REACT_APP_API_URL` | No | Backend base URL. Defaults to `http://localhost:4000`. Set this when pointing at a deployed backend. |
 
-### `npm test`
+Note: anything prefixed `REACT_APP_` gets bundled into the client-side JS and is publicly visible in the browser — never put secrets (API keys, tokens) here. AI-related calls go through the backend for exactly this reason.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Scripts
 
-### `npm run build`
+- `npm start` — dev server with hot reload
+- `npm test` — test runner (interactive watch mode)
+- `npm run build` — production build to `build/`. **Note:** hosts like Vercel run this with `CI=true`, which turns ESLint warnings (e.g. unused imports) into build-breaking errors. Run `CI=true npm run build` locally before pushing if a deploy might be affected.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Structure
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- `src/components/AppShell.tsx` — shared layout: fixed sidebar on desktop, top bar + fixed bottom tab bar on mobile
+- `src/components/HomePage.tsx` — job search/filter/listing page
+- `src/components/CVGenerator.tsx` — CV builder + upload-and-enhance flow
+- `src/hooks/useTheme.ts` — single source of truth for light/dark/system theme, shared across the whole app
+- `src/services/api.ts` — backend API client
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+This project was originally bootstrapped with [Create React App](https://github.com/facebook/create-react-app); see the [CRA documentation](https://facebook.github.io/create-react-app/docs/getting-started) for tooling details not covered here.
