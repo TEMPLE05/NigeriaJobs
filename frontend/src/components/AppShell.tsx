@@ -5,10 +5,10 @@ import { ThemeToggle } from './ThemeToggle';
 import InstallPrompt from './InstallPrompt';
 
 const NAV_LINKS = [
-  { to: '/', label: 'Browse Jobs', icon: Briefcase },
-  { to: '/cv-generator', label: 'CV Generator', icon: FileText },
-  { to: '/help', label: 'Help', icon: HelpCircle },
-  { to: '/contact', label: 'About', icon: Info },
+  { to: '/', label: 'Browse Jobs', shortLabel: 'Jobs', icon: Briefcase },
+  { to: '/cv-generator', label: 'CV Generator', shortLabel: 'CV', icon: FileText },
+  { to: '/help', label: 'Help', shortLabel: 'Help', icon: HelpCircle },
+  { to: '/contact', label: 'About', shortLabel: 'About', icon: Info },
 ];
 
 // Shared app chrome for every page. Desktop (lg+) gets a fixed sidebar that
@@ -95,7 +95,7 @@ const AppShell: React.FC = () => {
             always one thumb-reach away regardless of scroll position. Sized
             per standard tab-bar touch-target guidance (~56px+ per item). */}
         <nav
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex items-stretch"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex items-stretch gap-1 px-1"
           style={{
             backgroundColor: 'var(--footer-bg-color)',
             borderColor: 'var(--footer-border-color)',
@@ -103,17 +103,17 @@ const AppShell: React.FC = () => {
           }}
           aria-label="Primary"
         >
-          {NAV_LINKS.map(({ to, label, icon: Icon }) => {
+          {NAV_LINKS.map(({ to, shortLabel, icon: Icon }) => {
             const active = pathname === to;
             return (
               <Link
                 key={to}
                 to={to}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-14 text-center"
-                style={{ color: active ? 'var(--card-text-color)' : 'var(--card-secondary-text-color)' }}
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-h-14 text-center rounded-lg mx-0.5 my-1"
+                style={{ color: active ? 'var(--card-text-color)' : 'var(--card-secondary-text-color)', backgroundColor: active ? 'var(--badge-bg-color)' : 'transparent' }}
               >
                 <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
-                <span className="text-[11px] font-medium leading-none">{label}</span>
+                <span className="text-[11px] font-medium leading-none">{shortLabel}</span>
               </Link>
             );
           })}
