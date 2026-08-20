@@ -44,7 +44,7 @@ html {
      down together — unlike the old transform/zoom hack, changing the root
      font-size doesn't turn body into a containing block for position:fixed
      elements, so this doesn't re-break the sidebar. */
-  font-size: 85%;
+  font-size: 83%;
 }
 
 :root {

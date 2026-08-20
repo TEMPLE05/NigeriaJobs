@@ -74,11 +74,11 @@ const HomePage: React.FC<HomePageProps> = ({
 
         {/* Filter Section - Constrained */}
         <div className="mb-8">
-          <div className="rounded-2xl p-6 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--filter-border-color)', boxShadow: 'var(--filter-shadow)'}}>
-            <h3 className="text-xl font-bold mb-4" style={{color: 'var(--card-text-color)'}}>Search & Filter</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-2xl p-4 md:p-5 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--filter-border-color)', boxShadow: 'var(--filter-shadow)'}}>
+            <h3 className="text-lg font-bold mb-3" style={{color: 'var(--card-text-color)'}}>Search & Filter</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label htmlFor="keyword-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
+                <label htmlFor="keyword-filter" className="block text-sm font-medium mb-1.5" style={{color: 'var(--card-secondary-text-color)'}}>
                   Search Keywords
                 </label>
                 <input
@@ -87,12 +87,12 @@ const HomePage: React.FC<HomePageProps> = ({
                   placeholder="e.g., developer, engineer, designer"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
+                  className="w-full px-3.5 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
                 />
               </div>
 
               <div>
-                <label htmlFor="location-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
+                <label htmlFor="location-filter" className="block text-sm font-medium mb-1.5" style={{color: 'var(--card-secondary-text-color)'}}>
                   Job Location
                 </label>
                 <input
@@ -102,7 +102,7 @@ const HomePage: React.FC<HomePageProps> = ({
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   list="locations"
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
+                  className="w-full px-3.5 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
                 />
                 <datalist id="locations">
                   <option value="Lagos" />
@@ -194,14 +194,14 @@ const HomePage: React.FC<HomePageProps> = ({
               </div>
 
               <div>
-                <label htmlFor="source-filter" className="block text-sm font-medium mb-2" style={{color: 'var(--card-secondary-text-color)'}}>
+                <label htmlFor="source-filter" className="block text-sm font-medium mb-1.5" style={{color: 'var(--card-secondary-text-color)'}}>
                   Job Source
                 </label>
                 <select
                   id="source-filter"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
+                  className="w-full px-3.5 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
                 >
                   <option value="All">All Sources</option>
                   <option value="Indeed">Indeed</option>
@@ -211,25 +211,25 @@ const HomePage: React.FC<HomePageProps> = ({
               </div>
             </div>
 
-            <div className="flex justify-between items-center mt-4 gap-4">
+            <div className="flex justify-between items-center mt-3 gap-3">
               <button
                 onClick={handleCleanup}
                 disabled={cleanupLoading}
                 title="Remove jobs older than 7 days"
-                className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 text-sm font-medium disabled:opacity-50"
+                className="flex items-center space-x-2 px-2.5 py-1.5 rounded-lg transition-colors duration-200 text-xs font-medium disabled:opacity-50"
                 style={{color: 'var(--card-secondary-text-color)'}}
               >
                 {cleanupLoading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                 ) : (
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 )}
                 <span>{cleanupLoading ? 'Cleaning...' : 'Clean Old Jobs'}</span>
               </button>
 
               <div className="flex items-center space-x-3">
                 {cleanupMessage && (
-                  <div className="text-sm font-medium px-3 py-1 rounded-lg border" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)'}}>
+                  <div className="text-xs font-medium px-2.5 py-1 rounded-lg border" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)'}}>
                     {cleanupMessage}
                   </div>
                 )}
@@ -239,7 +239,7 @@ const HomePage: React.FC<HomePageProps> = ({
                     setLocation('');
                     setSource('All');
                   }}
-                  className="px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 bg-red-600 hover:bg-red-700 text-white"
+                  className="px-5 py-1.5 rounded-xl font-medium text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 bg-red-600 hover:bg-red-700 text-white"
                 >
                   Clear Filters
                 </button>
