@@ -1,14 +1,17 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Briefcase, FileText, HelpCircle, Info } from 'lucide-react';
+import { Briefcase, FileText, HelpCircle } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import InstallPrompt from './InstallPrompt';
 
+// Primary nav — the actual product features. "About" (the dev's personal
+// bio/portfolio page) intentionally isn't here; it's a quieter credit-line
+// link near the copyright instead, so it's not competing for space with
+// Browse Jobs/CV Generator/Help on a job seeker's main nav.
 const NAV_LINKS = [
   { to: '/', label: 'Browse Jobs', shortLabel: 'Jobs', icon: Briefcase },
   { to: '/cv-generator', label: 'CV Generator', shortLabel: 'CV', icon: FileText },
   { to: '/help', label: 'Help', shortLabel: 'Help', icon: HelpCircle },
-  { to: '/contact', label: 'About', shortLabel: 'About', icon: Info },
 ];
 
 // Shared app chrome for every page. Desktop (lg+) gets a fixed sidebar that
@@ -63,7 +66,8 @@ const AppShell: React.FC = () => {
         <div className="p-4 border-t space-y-3" style={{ borderColor: 'var(--header-border-color)' }}>
           <ThemeToggle />
           <p className="text-xs text-center" style={{ color: 'var(--card-secondary-text-color)' }}>
-            © 2025 JobVista.NG
+            © 2025 JobVista.NG ·{' '}
+            <Link to="/contact" className="hover:underline">About</Link>
           </p>
         </div>
       </aside>
@@ -89,6 +93,10 @@ const AppShell: React.FC = () => {
             fixed mobile tab bar below; lg:pb-0 since desktop has no such bar */}
         <main className="flex-1 pb-20 lg:pb-0" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
           <Outlet />
+          <p className="lg:hidden text-center text-xs py-4" style={{ color: 'var(--card-secondary-text-color)' }}>
+            © 2025 JobVista.NG ·{' '}
+            <Link to="/contact" className="hover:underline">About</Link>
+          </p>
         </main>
 
         {/* Mobile bottom tab bar — fixed (not a scrolling footer), so nav is
