@@ -597,22 +597,31 @@ function stripDate(line) {
     return line.replace(DATE_RANGE_RE, '').replace(/\s+/g, ' ').trim();
 }
 
-// Groups a section's lines into entries by closing one right after each
-// date-range line, once the entry has accumulated more than just that line.
-// This works well for layouts where the date is the last (or merged-first)
-// thing in an entry — "Degree / Institution / Dates" — which is common for
-// education. It's deliberately NOT used for work experience: experience
-// entries usually have description bullets trailing after the date
-// ("Position / Dates / bullet / bullet"), and closing there would fragment
-// a single job into bogus multi-entry garbage.
+// Groups a section's lines into entries by closing one once it has both a
+// date and enough signal to look complete. Closes on a date-range line only
+// once the accumulated text has BOTH a degree and an institution match —
+// not on the date alone, since some layouts (including this app's own CV
+// template) put the date on the same line as the degree via a flex/table
+// row, with the institution trailing on the next line; closing on that
+// first line alone would split one entry into two. The 4-line cap is a
+// safety valve for entries that never get an institution match (e.g. a
+// self-taught/bootcamp line with no recognizable institution keyword) so
+// they don't silently swallow every entry after them into one giant blob.
+// Deliberately NOT used for work experience: experience entries usually
+// have description bullets trailing after the date ("Position / Dates /
+// bullet / bullet"), and closing there would fragment a single job into
+// bogus multi-entry garbage.
 function splitOnTrailingDate(sectionLines) {
     const entries = [];
     let current = [];
     for (const line of sectionLines) {
         current.push(line);
-        if (DATE_RANGE_RE.test(line) && current.length > 1) {
-            entries.push(current);
-            current = [];
+        if (DATE_RANGE_RE.test(line)) {
+            const text = current.join(' ');
+            if ((DEGREE_RE.test(text) && INSTITUTION_RE.test(text)) || current.length >= 4) {
+                entries.push(current);
+                current = [];
+            }
         }
     }
     if (current.length > 0) entries.push(current);
@@ -829,7 +838,11 @@ app.post('/api/cv/analyze', async (req, res) => {
 
 // PDF Download endpoint
 app.get('/api/cv/download/:filename', (req, res) => {
-    const filename = req.params.filename;
+    // path.basename strips any directory components (e.g. "../../.env"),
+    // so this can never resolve outside uploads/ — without it, req.params.filename
+    // went straight into path.join unsanitized, letting anyone download the
+    // server's .env (MongoDB URI, OpenAI key) or any other readable file.
+    const filename = path.basename(req.params.filename);
     const filePath = path.join('uploads', filename);
 
     if (fs.existsSync(filePath)) {
@@ -854,10 +867,16 @@ function enhanceCVLocally(cvData, targetJob, enhanceContent, optimizeKeywords) {
     if (enhanceContent) {
         // Enhance summary
         if (enhanced.personalInfo.summary) {
+            const closingLine = 'Committed to delivering high-quality results and continuous learning.';
             enhanced.personalInfo.summary = enhanced.personalInfo.summary
                 .replace(/\b(i am|i'm|my name is)\b/gi, 'Professional with')
-                .replace(/\b(like|enjoy|love)\b/gi, 'experienced in')
-                + ' Committed to delivering high-quality results and continuous learning.';
+                .replace(/\b(like|enjoy|love)\b/gi, 'experienced in');
+            // Re-enhancing an already-enhanced CV (e.g. re-uploading a
+            // previously generated one) shouldn't pile up duplicate copies
+            // of this sentence — only append if it isn't already there.
+            if (!enhanced.personalInfo.summary.includes(closingLine)) {
+                enhanced.personalInfo.summary += ' ' + closingLine;
+            }
         }
 
         // Enhance work experience descriptions
@@ -918,7 +937,14 @@ function extractJobKeywords(jobTitle) {
 
 // Function to generate PDF from CV data
 async function generateCVPDF(cvData) {
-    const browser = await puppeteer.launch();
+    // Same launch args as crawler.js's createBrowser() — without --no-sandbox,
+    // Chromium typically fails to launch at all in a Linux container (Render),
+    // so CV generation would work locally but be completely broken in production.
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath()
+    });
     const page = await browser.newPage();
 
     const html = generateCVHTML(cvData);

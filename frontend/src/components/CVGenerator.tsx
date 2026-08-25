@@ -1195,7 +1195,7 @@ const CVGenerator: React.FC = () => {
                     {generatedCV.personalInfo.fullName}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    {generatedCV.personalInfo.email} | {generatedCV.personalInfo.phone}
+                    {[generatedCV.personalInfo.email, generatedCV.personalInfo.phone].filter(Boolean).join(' | ')}
                   </p>
                   <p className="text-gray-600 dark:text-gray-400">
                     {generatedCV.personalInfo.address}
@@ -1216,7 +1216,10 @@ const CVGenerator: React.FC = () => {
                       <div key={index} className="mb-3">
                         <div className="font-semibold">{exp.position} at {exp.company}</div>
                         <div className="text-gray-600 dark:text-gray-400 text-sm">
-                          {exp.startDate} - {exp.endDate} | {exp.location}
+                          {[
+                            (exp.startDate || exp.endDate) ? `${exp.startDate} - ${exp.endDate}` : '',
+                            exp.location
+                          ].filter(Boolean).join(' | ')}
                         </div>
                         <p className="text-gray-700 dark:text-gray-300 mt-1">
                           {exp.description}
@@ -1232,10 +1235,13 @@ const CVGenerator: React.FC = () => {
                     {generatedCV.education.map((edu, index) => (
                       <div key={index} className="mb-3">
                         <div className="font-semibold">
-                          {edu.degree} in {edu.field}
+                          {edu.field ? `${edu.degree} in ${edu.field}` : edu.degree}
                         </div>
                         <div className="text-gray-600 dark:text-gray-400">
-                          {edu.institution} | {edu.startDate} - {edu.endDate}
+                          {[
+                            edu.institution,
+                            (edu.startDate || edu.endDate) ? `${edu.startDate} - ${edu.endDate}` : ''
+                          ].filter(Boolean).join(' | ')}
                         </div>
                         {edu.gpa && (
                           <div className="text-gray-600 dark:text-gray-400 text-sm">
