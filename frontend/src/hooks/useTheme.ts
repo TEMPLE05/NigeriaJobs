@@ -21,6 +21,16 @@ function applyTheme(theme: ThemeMode) {
   } else {
     root.classList.remove('dark', 'manual-dark', 'system-dark');
   }
+
+  // Keep the browser's own chrome (status bar / address bar area on mobile)
+  // in sync with the actual theme, not the hardcoded black it shipped with —
+  // read the real value straight from the CSS variable rather than
+  // duplicating the color here, so it never drifts if index.css changes.
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeColorMeta) {
+    const bgColor = getComputedStyle(root).getPropertyValue('--bg-color').trim();
+    if (bgColor) themeColorMeta.setAttribute('content', bgColor);
+  }
 }
 
 // Single source of truth for theme state, shared across every page.

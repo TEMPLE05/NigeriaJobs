@@ -15,7 +15,11 @@ body,
   width: 100%;
   margin: 0;
   padding: 0;
-  background: #000; /* Optional fallback */
+  /* Theme-aware, not a hardcoded color — viewport-fit=cover lets the page
+     extend into the notch/status-bar area on mobile, and whatever's painted
+     here shows through there. A hardcoded black previously showed as a
+     black bar at the top even in light mode. */
+  background: var(--bg-color);
 }
 .preloader-active html,
 .preloader-active body,
