@@ -31,8 +31,9 @@ npm start
 
 ### Jobs
 
-- `GET /api/jobs?keyword=&location=&source=&page=&limit=` — paginated, deduplicated job listings (only jobs from the last 7 days)
+- `GET /api/jobs?keyword=&location=&source=&level=&page=&limit=` — paginated, deduplicated job listings (only jobs from the last 7 days)
 - `GET /api/scrape` — manually trigger a scrape cycle in the background (no-ops if one is already running)
+- `GET /api/ping` — no-op health check (no DB query), for an external keep-alive scheduler — see "Deployment" below
 - `DELETE /api/cleanup` — delete jobs older than 7 days
 - `DELETE /api/cleanup-duplicates` — remove duplicate postings (same title/company/location), keeping the newest
 - `GET /api/results` — latest 50 jobs, unfiltered
@@ -54,6 +55,14 @@ npm start
 
 - **Hourly scrape** (`0 * * * *`) — runs the full keyword × location matrix across all three platforms. Guarded so a manual `/api/scrape` call and the cron can't run concurrently.
 - **Weekly deletion** (Sundays at midnight) — removes jobs older than 7 days.
+
+Both rely on the Node process staying alive continuously — see "Deployment" below if hosted somewhere that sleeps the process on inactivity.
+
+## Deployment
+
+On Render's free tier (or any host that spins the service down after a period of no HTTP traffic), the whole process — including both cron schedules above — stops running while asleep, and even an external ping meant to wake it (e.g. an hourly cron-job.org call to `/api/scrape`) can itself fail with a 503 if the wake attempt doesn't complete in time.
+
+Fix: point an external scheduler at `GET /api/ping` every ~10-14 minutes (comfortably under Render's 15-minute inactivity threshold) so the service never gets the chance to sleep. Once it's continuously warm, both the in-process cron schedules and any external `/api/scrape` trigger become reliable again.
 
 ### CV parsing
 

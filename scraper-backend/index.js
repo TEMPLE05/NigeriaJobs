@@ -151,6 +151,20 @@ async function runFullScrapeCycle(trigger) {
     }
 }
 
+// Lightweight keep-alive target — no DB query, just an instant response.
+// Render's free tier spins the whole service down after ~15 min of no
+// incoming HTTP traffic, which kills the in-process cron scheduler along
+// with it until the next request wakes it back up (and that wake can itself
+// fail, surfacing as a 503 with x-render-routing: hibernate-wake-error to
+// whatever tried to reach it). Point an external scheduler (e.g.
+// cron-job.org) at this every ~10-14 minutes — comfortably under that
+// 15-minute threshold — so the service never gets the chance to sleep, and
+// the actual hourly /api/scrape trigger always lands on an already-warm
+// instance instead of racing a cold start.
+app.get('/api/ping', (req, res) => {
+    res.json({ ok: true, time: new Date().toISOString() });
+});
+
 // 🔹 Manual scrape endpoint (so you don’t wait for cron)
 app.get('/api/scrape', (req, res) => {
     if (isScrapeRunning) {
