@@ -60,6 +60,22 @@ app.use(cors());
 app.use(compression()); // Enable gzip compression for better performance
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies
 
+// Guards routes that are cheap to abuse (bulk-delete data, trigger an
+// expensive Puppeteer scrape cycle) but have no real UI/user in front of
+// them — just a shared secret checked against a header, since the only
+// callers are the site owner and an external cron trigger, not end users.
+function requireAdminKey(req, res, next) {
+    const configuredKey = process.env.ADMIN_API_KEY;
+    if (!configuredKey) {
+        // Fail closed: an unset key should block access, not silently allow it.
+        return res.status(503).json({ error: 'This endpoint is not configured on this server' });
+    }
+    if (req.headers['x-admin-key'] !== configuredKey) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    next();
+}
+
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
@@ -166,7 +182,7 @@ app.get('/api/ping', (req, res) => {
 });
 
 // 🔹 Manual scrape endpoint (so you don’t wait for cron)
-app.get('/api/scrape', (req, res) => {
+app.get('/api/scrape', requireAdminKey, (req, res) => {
     if (isScrapeRunning) {
         return res.json({ message: 'A scrape is already in progress' });
     }
@@ -469,7 +485,7 @@ app.delete('/api/cleanup', async (req, res) => {
 });
 
 // New endpoint to remove duplicate jobs
-app.delete('/api/cleanup-duplicates', async (req, res) => {
+app.delete('/api/cleanup-duplicates', requireAdminKey, async (req, res) => {
     try {
         // Use MongoDB aggregation to find duplicates with their scrapedAt timestamps
         const duplicates = await Job.aggregate([

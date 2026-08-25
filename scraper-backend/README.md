@@ -20,6 +20,7 @@ Fill in `.env`:
 |---|---|---|
 | `MONGODB_URI` | Yes | MongoDB connection string |
 | `PORT` | No | Defaults to `4000` |
+| `ADMIN_API_KEY` | No | Required to call `/api/scrape` and `/api/cleanup-duplicates` (send as an `x-admin-key` header). Unset = those two routes are blocked entirely (fails closed), not open. |
 
 ```sh
 npm start
@@ -32,12 +33,14 @@ npm start
 ### Jobs
 
 - `GET /api/jobs?keyword=&location=&source=&level=&page=&limit=` — paginated, deduplicated job listings (only jobs from the last 7 days)
-- `GET /api/scrape` — manually trigger a scrape cycle in the background (no-ops if one is already running)
+- `GET /api/scrape` 🔒 — manually trigger a scrape cycle in the background (no-ops if one is already running)
 - `GET /api/ping` — no-op health check (no DB query), for an external keep-alive scheduler — see "Deployment" below
-- `DELETE /api/cleanup` — delete jobs older than 7 days
-- `DELETE /api/cleanup-duplicates` — remove duplicate postings (same title/company/location), keeping the newest
+- `DELETE /api/cleanup` — delete jobs older than 7 days. Deliberately left open (not 🔒) — it's wired to a real "Clean Old Jobs" button in the frontend, and the frontend can't hold a secret without shipping it to every visitor's browser. Low risk regardless: it only removes what the weekly cron would delete anyway.
+- `DELETE /api/cleanup-duplicates` 🔒 — remove duplicate postings (same title/company/location), keeping the newest
 - `GET /api/results` — latest 50 jobs, unfiltered
 - `GET /api/debug/jobs` — diagnostic listing with scrape age, for troubleshooting
+
+🔒 = requires an `x-admin-key` header matching `ADMIN_API_KEY`.
 
 ### CV tools
 
