@@ -280,35 +280,40 @@ const CVGenerator: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back to Home — mobile-only, since the sidebar nav already covers desktop */}
-        <Link
-          to="/"
-          className="lg:hidden inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-xl font-medium border transition-all duration-300 hover:scale-105"
-          style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)' }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
-
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold gradient-text mb-4">
-          CV Generator
-        </h1>
-        <p className="text-xl" style={{color: 'var(--card-secondary-text-color)'}}>
-          Create professional resumes with smart enhancements
-        </p>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        {/* Back-to-Home sits inline with the title on mobile (icon-only, saves
+            a full row of vertical space vs. a separate pill above it) — hidden
+            on desktop since the sidebar nav already covers that. The spacer on
+            the right balances it so the title stays visually centered. */}
+        <div className="flex items-center gap-3 mb-4 md:mb-8">
+          <Link
+            to="/"
+            className="lg:hidden flex-shrink-0 p-2 rounded-xl border transition-all duration-300 hover:scale-105"
+            style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)', color: 'var(--card-text-color)' }}
+            aria-label="Back to Home"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div className="flex-1 text-center">
+            <h1 className="text-2xl md:text-4xl font-bold gradient-text mb-1 md:mb-4">
+              CV Generator
+            </h1>
+            <p className="text-xs md:text-xl" style={{color: 'var(--card-secondary-text-color)'}}>
+              Create professional resumes with smart enhancements
+            </p>
+          </div>
+          <div className="lg:hidden w-9 flex-shrink-0" aria-hidden="true"></div>
+        </div>
 
       {/* Tab Navigation */}
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center mb-4 md:mb-8">
         <div className="p-1 rounded-2xl shadow-lg border" style={{ backgroundColor: 'var(--bg-color)', borderColor: 'var(--card-border-color)' }}>
           <button
             onClick={() => {
               setActiveTab('create');
               setCurrentStep(0);
             }}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+            className={`px-3 py-2 md:px-6 md:py-3 text-sm md:text-base rounded-xl font-semibold transition-all duration-300 ${
               activeTab === 'create'
                 ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg transform scale-105'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10'
@@ -321,7 +326,7 @@ const CVGenerator: React.FC = () => {
               setActiveTab('enhance');
               setCurrentStep(0);
             }}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+            className={`px-3 py-2 md:px-6 md:py-3 text-sm md:text-base rounded-xl font-semibold transition-all duration-300 ${
               activeTab === 'enhance'
                 ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg transform scale-105'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10'
@@ -334,19 +339,19 @@ const CVGenerator: React.FC = () => {
 
       {/* Progress Bar for Create Tab */}
       {activeTab === 'create' && (
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+        <div className="mb-4 md:mb-8">
+          <div className="flex justify-between items-center mb-2 md:mb-4">
             {steps.map((step, index) => (
               <div key={index} className="flex items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300 ${
+                <div className={`w-7 h-7 md:w-10 md:h-10 text-xs md:text-base rounded-full flex items-center justify-center font-semibold transition-all duration-300 ${
                   index <= currentStep
                     ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                 }`}>
-                  {index < currentStep ? <Check className="w-5 h-5" /> : index + 1}
+                  {index < currentStep ? <Check className="w-3.5 h-3.5 md:w-5 md:h-5" /> : index + 1}
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={`w-16 h-1 mx-2 rounded transition-all duration-300 ${
+                  <div className={`w-4 md:w-16 h-1 mx-1 md:mx-2 rounded transition-all duration-300 ${
                     index < currentStep ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-gray-200 dark:bg-gray-700'
                   }`} />
                 )}
@@ -354,26 +359,26 @@ const CVGenerator: React.FC = () => {
             ))}
           </div>
           <div className="text-center">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+            <h3 className="text-base md:text-xl font-bold text-gray-900 dark:text-white mb-1">
               {steps[currentStep].title}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-xs md:text-base text-gray-600 dark:text-gray-400">
               {steps[currentStep].description}
             </p>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-2 gap-3 md:gap-8">
         {/* Input Section */}
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {activeTab === 'create' ? (
             <>
               {/* Step Content */}
               {currentStep === 0 && (
                 /* Personal Information */
-                <div className="rounded-2xl shadow-lg p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
-                  <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
+                <div className="rounded-2xl shadow-lg p-4 md:p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
+                  <h2 className="text-xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mr-3">
                       <span className="text-white font-bold">1</span>
                     </div>
@@ -472,9 +477,9 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 1 && (
                 /* Education */
-                <div className="rounded-2xl shadow-lg p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                <div className="rounded-2xl shadow-lg p-4 md:p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 md:mb-6">
+                    <h2 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                       <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mr-3">
                         <span className="text-white font-bold">2</span>
                       </div>
@@ -600,9 +605,9 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 2 && (
                 /* Work Experience */
-                <div className="rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                <div className="rounded-2xl shadow-xl p-4 md:p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 md:mb-6">
+                    <h2 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                       <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mr-3">
                         <span className="text-white font-bold">3</span>
                       </div>
@@ -716,9 +721,9 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 3 && (
                 /* Skills */
-                <div className="rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                <div className="rounded-2xl shadow-xl p-4 md:p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 md:mb-6">
+                    <h2 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                       <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-3">
                         <span className="text-white font-bold">4</span>
                       </div>
@@ -793,8 +798,8 @@ const CVGenerator: React.FC = () => {
 
               {currentStep === 4 && (
                 /* Review & Generate */
-                <div className="rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-6">
+                <div className="rounded-2xl shadow-xl p-4 md:p-8 border" style={{ backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--card-border-color)' }}>
+                  <h2 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-6">
                     <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center mr-3">
                       <span className="text-white font-bold">5</span>
                     </div>
@@ -1080,7 +1085,7 @@ const CVGenerator: React.FC = () => {
         </div>
 
         {/* Preview Section */}
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {/* Hidden PDF Template */}
           <div ref={targetRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
             {generatedCV && <CVPDFTemplate cvData={generatedCV} />}
