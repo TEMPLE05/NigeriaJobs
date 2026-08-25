@@ -13,13 +13,14 @@ export const useJobs = () => {
     location?: string,
     source?: string,
     page: number = 1,
-    limit: number = 8
+    limit: number = 8,
+    level?: string
   ) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await jobsApi.getJobs(keyword, location, source, page, limit);
+      const response = await jobsApi.getJobs(keyword, location, source, page, limit, level);
       setJobs(response.jobs);
       setPagination(response.pagination);
     } catch (err) {

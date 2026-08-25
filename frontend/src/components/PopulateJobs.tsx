@@ -8,6 +8,7 @@ import { ErrorMessage } from './ErrorMessage';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersistentState } from '../hooks/usePersistentState';
+import { MASCOT_ICON_URL } from '../utils/branding';
 import { ViewToggle } from './ViewToggle';
 import { JobListItem } from './JobListItem';
 
@@ -125,7 +126,7 @@ const PopulateJobs: React.FC = () => {
             ) : (
               <div className="text-center py-12">
                 <div className="text-gray-400 mb-4">
-                  <img src="/logo.app/in-site.png" alt="Logo" className="h-20 w-auto mx-auto" />
+                  <img src={MASCOT_ICON_URL} alt="Logo" className="h-20 w-auto mx-auto" />
                 </div>
                 <h3 className="text-xl font-medium mb-2" style={{color: 'var(--card-text-color)'}}>
                   No jobs found
@@ -146,7 +147,7 @@ const PopulateJobs: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center space-x-3">
               <div className="p-1.5">
-                <img src="/logo.app/in-site.png" alt="Logo" className="h-7 w-auto" />
+                <img src={MASCOT_ICON_URL} alt="Logo" className="h-7 w-auto" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">

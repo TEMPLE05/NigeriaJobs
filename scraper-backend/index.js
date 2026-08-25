@@ -184,6 +184,15 @@ cron.schedule('0 0 * * 0', async () => {
     console.log('Weekly deletion cron job completed');
 });
 
+// Same title-keyword classification as the frontend's JobCard.getJobLevel,
+// kept in sync so the "Experience Level" filter matches what's actually
+// shown on each card's level badge.
+const EXPERIENCE_LEVEL_PATTERNS = {
+    'Senior': /senior|lead|principal|head/i,
+    'Mid-level': /mid|intermediate|experienced/i,
+    'Entry': /junior|entry|graduate|trainee/i
+};
+
 app.get('/api/jobs', async (req, res) => {
     const cacheKey = getCacheKey(req);
     const cachedResult = getCache(cacheKey);
@@ -193,11 +202,12 @@ app.get('/api/jobs', async (req, res) => {
         return res.json(cachedResult);
     }
 
-    let { keyword, location, source, page = 1, limit = 10 } = req.query;
+    let { keyword, location, source, level, page = 1, limit = 10 } = req.query;
 
     keyword = keyword || '';
     location = location || '';
     source = source || '';
+    level = level || '';
     page = parseInt(page);
     limit = parseInt(limit);
 
@@ -207,13 +217,26 @@ app.get('/api/jobs', async (req, res) => {
 
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         const query = { scrapedAt: { $gte: sevenDaysAgo } };
+
+        // Both keyword and level match against `title`, so they're combined
+        // via $and rather than one overwriting the other on `query.title`.
+        const titleConditions = [];
         if (keyword) {
             // Escape special regex characters
             const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            query.title = { $regex: new RegExp(escapedKeyword, 'i') };
+            titleConditions.push({ title: { $regex: new RegExp(escapedKeyword, 'i') } });
             console.log(`Searching for keyword: "${keyword}"`);
-            console.log(`Search query:`, query);
         }
+        if (level && EXPERIENCE_LEVEL_PATTERNS[level]) {
+            titleConditions.push({ title: { $regex: EXPERIENCE_LEVEL_PATTERNS[level] } });
+            console.log(`Filtering by experience level: "${level}"`);
+        }
+        if (titleConditions.length === 1) {
+            Object.assign(query, titleConditions[0]);
+        } else if (titleConditions.length > 1) {
+            query.$and = titleConditions;
+        }
+
         if (location) {
             query.jobLocation = { $regex: new RegExp(location, 'i') };
         }

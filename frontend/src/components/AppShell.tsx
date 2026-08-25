@@ -1,15 +1,17 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Briefcase, FileText, HelpCircle } from 'lucide-react';
+import { FileText, HelpCircle } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { MascotIcon } from './MascotIcon';
 import InstallPrompt from './InstallPrompt';
+import { MASCOT_ICON_URL } from '../utils/branding';
 
 // Primary nav — the actual product features. "About" (the dev's personal
 // bio/portfolio page) intentionally isn't here; it's a quieter credit-line
 // link near the copyright instead, so it's not competing for space with
 // Browse Jobs/CV Generator/Help on a job seeker's main nav.
 const NAV_LINKS = [
-  { to: '/', label: 'Browse Jobs', shortLabel: 'Jobs', icon: Briefcase },
+  { to: '/', label: 'Browse Jobs', shortLabel: 'Jobs', icon: MascotIcon },
   { to: '/cv-generator', label: 'CV Generator', shortLabel: 'CV', icon: FileText },
   { to: '/help', label: 'Help', shortLabel: 'Help', icon: HelpCircle },
 ];
@@ -32,7 +34,7 @@ const AppShell: React.FC = () => {
       >
         <div className="p-6 border-b" style={{ borderColor: 'var(--header-border-color)' }}>
           <div className="flex items-center gap-2">
-            <img src="/logo.app/in-site.png" alt="Logo" className="h-8 w-auto" />
+            <img src={MASCOT_ICON_URL} alt="Logo" className="h-8 w-auto" />
             <div>
               <div className="text-lg font-bold text-gray-900 dark:text-white">JobVista.NG</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">Find your dream job</div>

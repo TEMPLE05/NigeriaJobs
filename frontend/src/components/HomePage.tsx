@@ -1,8 +1,9 @@
 import React, { Suspense, lazy } from 'react';
-import { Trash2, FileSearch } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Job, JobResponse } from '../types/Job';
 import { ViewToggle } from './ViewToggle';
+import { MASCOT_ICON_URL } from '../utils/branding';
 import { JobListItem } from './JobListItem';
 
 const JobCard = lazy(() => import('./JobCard').then(module => ({ default: module.JobCard })));
@@ -17,6 +18,8 @@ interface HomePageProps {
   setLocation: (value: string) => void;
   source: string;
   setSource: (value: string) => void;
+  level: string;
+  setLevel: (value: string) => void;
   cleanupLoading: boolean;
   cleanupMessage: string | null;
   handleCleanup: () => void;
@@ -25,7 +28,7 @@ interface HomePageProps {
   error: string | null;
   pagination: JobResponse['pagination'] | null;
   currentPage: number;
-  fetchJobs: (keyword?: string, location?: string, source?: string, page?: number, limit?: number) => void;
+  fetchJobs: (keyword?: string, location?: string, source?: string, page?: number, limit?: number, level?: string) => void;
   handlePageChange: (page: number) => void;
   viewMode: 'card' | 'list';
   setViewMode: (mode: 'card' | 'list') => void;
@@ -35,6 +38,7 @@ const HomePage: React.FC<HomePageProps> = ({
   keyword, setKeyword,
   location, setLocation,
   source, setSource,
+  level, setLevel,
   cleanupLoading, cleanupMessage, handleCleanup,
   jobs, loading, error, pagination, currentPage, fetchJobs, handlePageChange,
   viewMode, setViewMode,
@@ -42,31 +46,34 @@ const HomePage: React.FC<HomePageProps> = ({
   return (
     <>
       {/* Hero Section - Constrained */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-12 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        <div className="text-center mb-6 md:mb-12 relative">
           <div className="absolute inset-0 rounded-3xl opacity-30" style={{background: 'var(--hero-gradient)'}}></div>
           <div className="relative">
-            <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-gray-900 dark:text-white">
+            <h2 className="text-3xl md:text-7xl font-bold mb-2 md:mb-6 leading-tight text-gray-900 dark:text-white">
               Find Your Next
-              <span className="block text-6xl md:text-8xl font-extrabold text-gray-900 dark:text-white">
+              <span className="block text-4xl md:text-8xl font-extrabold text-gray-900 dark:text-white">
                 Career
               </span>
             </h2>
-            <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-sm md:text-2xl text-gray-700 dark:text-gray-300 mb-3 md:mb-8 max-w-3xl mx-auto leading-relaxed">
               Discover thousands of job opportunities from top Nigerian companies, all in one place
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+            {/* Row on every breakpoint (not just sm+) — stacking these into 3
+                full rows was the single biggest chunk of vertical space on
+                mobile, pushing the filter card down toward the fixed nav. */}
+            <div className="flex flex-row flex-wrap gap-2 md:gap-4 justify-center items-center">
+              <div className="flex items-center space-x-1.5 md:space-x-2 text-gray-600 dark:text-gray-400">
                 <div className="status-dot-green"></div>
-                <span className="text-sm">Live Job Updates</span>
+                <span className="text-xs md:text-sm">Live Job Updates</span>
               </div>
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <div className="flex items-center space-x-1.5 md:space-x-2 text-gray-600 dark:text-gray-400">
                 <div className="status-dot-blue"></div>
-                <span className="text-sm">Real-time Search</span>
+                <span className="text-xs md:text-sm">Real-time Search</span>
               </div>
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <div className="flex items-center space-x-1.5 md:space-x-2 text-gray-600 dark:text-gray-400">
                 <div className="status-dot-purple"></div>
-                <span className="text-sm">Verified Companies</span>
+                <span className="text-xs md:text-sm">Verified Companies</span>
               </div>
             </div>
           </div>
@@ -76,7 +83,7 @@ const HomePage: React.FC<HomePageProps> = ({
         <div className="mb-8">
           <div className="rounded-2xl p-4 md:p-5 shadow-lg border" style={{backgroundColor: 'var(--filter-bg-color)', borderColor: 'var(--filter-border-color)', boxShadow: 'var(--filter-shadow)'}}>
             <h3 className="text-lg font-bold mb-3" style={{color: 'var(--card-text-color)'}}>Search & Filter</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
                 <label htmlFor="keyword-filter" className="block text-sm font-medium mb-1.5" style={{color: 'var(--card-secondary-text-color)'}}>
                   Search Keywords
@@ -91,6 +98,10 @@ const HomePage: React.FC<HomePageProps> = ({
                 />
               </div>
 
+              {/* Location + Experience Level share a row on mobile (md:contents
+                  lets this wrapper "disappear" at md+, so both become direct
+                  items of the outer 4-col grid instead) */}
+              <div className="grid grid-cols-2 gap-3 md:contents">
               <div>
                 <label htmlFor="location-filter" className="block text-sm font-medium mb-1.5" style={{color: 'var(--card-secondary-text-color)'}}>
                   Job Location
@@ -194,6 +205,24 @@ const HomePage: React.FC<HomePageProps> = ({
               </div>
 
               <div>
+                <label htmlFor="level-filter" className="block text-sm font-medium mb-1.5" style={{color: 'var(--card-secondary-text-color)'}}>
+                  Experience Level
+                </label>
+                <select
+                  id="level-filter"
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300" style={{backgroundColor: 'var(--card-bg-color)', borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)'}}
+                >
+                  <option value="All">All Levels</option>
+                  <option value="Entry">Entry</option>
+                  <option value="Mid-level">Mid-level</option>
+                  <option value="Senior">Senior</option>
+                </select>
+              </div>
+              </div>
+
+              <div>
                 <label htmlFor="source-filter" className="block text-sm font-medium mb-1.5" style={{color: 'var(--card-secondary-text-color)'}}>
                   Job Source
                 </label>
@@ -238,6 +267,7 @@ const HomePage: React.FC<HomePageProps> = ({
                     setKeyword('');
                     setLocation('');
                     setSource('All');
+                    setLevel('All');
                   }}
                   className="px-5 py-1.5 rounded-xl font-medium text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 bg-red-600 hover:bg-red-700 text-white"
                 >
@@ -322,9 +352,7 @@ const HomePage: React.FC<HomePageProps> = ({
               )
             ) : (
               <div className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <FileSearch className="w-16 h-16 mx-auto" />
-                </div>
+                <img src={MASCOT_ICON_URL} alt="" className="w-20 h-20 mx-auto mb-4 opacity-70" />
                 <h3 className="text-xl font-medium mb-2" style={{color: 'var(--card-text-color)'}}>
                   No jobs found
                 </h3>

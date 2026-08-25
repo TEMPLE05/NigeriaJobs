@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
   const [source, setSource] = useState('All');
+  const [level, setLevel] = useState('All');
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,7 +74,7 @@ const App: React.FC = () => {
       if (retryCountRef.current < MAX_RETRIES) {
         retryCountRef.current += 1;
         timer = setTimeout(() => {
-          fetchJobs(undefined, undefined, source, 1, 8);
+          fetchJobs(undefined, undefined, source, 1, 8, level);
         }, RETRY_DELAY_MS);
       } else {
         dismiss();
@@ -81,22 +82,22 @@ const App: React.FC = () => {
     }
 
     return () => clearTimeout(timer);
-  }, [isLoading, loading, error, pagination, fetchJobs, source]);
+  }, [isLoading, loading, error, pagination, fetchJobs, source, level]);
 
   // Initial load
   useEffect(() => {
-    fetchJobs(undefined, undefined, source, 1, 8);
-  }, [fetchJobs, source]);
+    fetchJobs(undefined, undefined, source, 1, 8, level);
+  }, [fetchJobs, source, level]);
 
   const handleSearch = useCallback(() => {
     setCurrentPage(1); // Reset to first page when searching
-    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, 1, 8);
-  }, [keyword, location, source, fetchJobs]);
+    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, 1, 8, level);
+  }, [keyword, location, source, level, fetchJobs]);
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
-    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, page, 8);
-  }, [keyword, location, source, fetchJobs]);
+    fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, page, 8, level);
+  }, [keyword, location, source, level, fetchJobs]);
 
   const handleCleanup = async () => {
     if (cleanupLoading) return;
@@ -109,7 +110,7 @@ const App: React.FC = () => {
       setCleanupMessage(`✅ ${result.message}`);
       // Refresh jobs after cleanup
       setCurrentPage(1);
-      fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, 1, 8);
+      fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, 1, 8, level);
     } catch (error) {
       setCleanupMessage(`❌ Failed to cleanup: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
@@ -126,7 +127,7 @@ const App: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [keyword, location, source, handleSearch]);
+  }, [keyword, location, source, level, handleSearch]);
 
   // Scroll to jobs section when jobs change (for pagination)
   useEffect(() => {
@@ -153,6 +154,8 @@ const App: React.FC = () => {
               setLocation={setLocation}
               source={source}
               setSource={setSource}
+              level={level}
+              setLevel={setLevel}
               cleanupLoading={cleanupLoading}
               cleanupMessage={cleanupMessage}
               handleCleanup={handleCleanup}
