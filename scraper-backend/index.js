@@ -306,7 +306,14 @@ app.get('/api/jobs', async (req, res) => {
             console.log(`Sample job titles:`, jobs.slice(0, 3).map(job => job.title));
         }
 
-        if (jobs.length === 0 && keyword) {
+        // totalJobs === 0 (not just jobs.length === 0) — the latter also
+        // triggers on any page past the end of a small-but-real result set
+        // (e.g. 5 real matches, page 2 legitimately has nothing left), which
+        // used to silently drop the level/location/source filters and swap
+        // in a totally different, unfiltered result set with an unrelated
+        // page count — stranding the user on a page pagination could no
+        // longer make sense of.
+        if (totalJobs === 0 && keyword) {
             console.log(`No jobs found with initial search, trying fallback search...`);
             const fallbackQuery = {
                 title: { $regex: new RegExp(keyword, 'i') },

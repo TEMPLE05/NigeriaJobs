@@ -91,9 +91,10 @@ const AppShell: React.FC = () => {
           </div>
         </header>
 
-        {/* pb-20 (+ safe-area) reserves room so content never sits behind the
-            fixed mobile tab bar below; lg:pb-0 since desktop has no such bar */}
-        <main className="flex-1 pb-20 lg:pb-0" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+        {/* pb-24 (+ safe-area) reserves room so content never sits behind the
+            floating mobile tab bar below (its own height plus the gap it
+            floats above the edge by); lg:pb-0 since desktop has no such bar */}
+        <main className="flex-1 pb-24 lg:pb-0" style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
           <Outlet />
           <p className="lg:hidden text-center text-xs py-4" style={{ color: 'var(--card-secondary-text-color)' }}>
             © 2025 JobVista.NG ·{' '}
@@ -101,15 +102,18 @@ const AppShell: React.FC = () => {
           </p>
         </main>
 
-        {/* Mobile bottom tab bar — fixed (not a scrolling footer), so nav is
-            always one thumb-reach away regardless of scroll position. Sized
-            per standard tab-bar touch-target guidance (~56px+ per item). */}
+        {/* Mobile bottom tab bar — floating pill (X/Grok-style) rather than
+            flush to the screen edge, so nav is always one thumb-reach away
+            regardless of scroll position. Floating also clears the OS edge
+            gesture zones (iOS swipe-up-home, Android back-swipe) instead of
+            sitting right on top of them. Sized per standard tab-bar
+            touch-target guidance (~56px+ per item). */}
         <nav
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex items-stretch gap-1 px-1"
+          className="lg:hidden fixed left-3 right-3 z-40 border rounded-2xl shadow-xl flex items-stretch gap-1 px-1"
           style={{
             backgroundColor: 'var(--footer-bg-color)',
             borderColor: 'var(--footer-border-color)',
-            paddingBottom: 'env(safe-area-inset-bottom)',
+            bottom: 'calc(0.75rem + env(safe-area-inset-bottom))',
           }}
           aria-label="Primary"
         >

@@ -99,6 +99,18 @@ const App: React.FC = () => {
     fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, page, 8, level);
   }, [keyword, location, source, level, fetchJobs]);
 
+  // Self-heal: if the current page ends up beyond what the server says is
+  // valid (e.g. landing past the last page of a narrow search, or the
+  // underlying data shifting between requests), snap back to a real page
+  // automatically instead of leaving the user stuck on an empty page with
+  // no pagination controls to navigate back with.
+  useEffect(() => {
+    if (!pagination || loading) return;
+    if (pagination.totalPages > 0 && currentPage > pagination.totalPages) {
+      handlePageChange(pagination.totalPages);
+    }
+  }, [pagination, currentPage, loading, handlePageChange]);
+
   const handleCleanup = async () => {
     if (cleanupLoading) return;
 
