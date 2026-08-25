@@ -87,6 +87,17 @@ async function createBrowser() {
     });
 }
 
+// `waitUntil: "domcontentloaded"` fires once the initial HTML is parsed, but
+// all three job sites render their listings via client-side JS afterward —
+// evaluating immediately is a race that intermittently finds 0 results even
+// though the listings show up a moment later (confirmed: ~1 in 3 real runs
+// against Indeed). Waiting for any of the real content selectors to appear
+// fixes the race; a genuine no-results page still correctly falls through to
+// 0 after the timeout, since it never had anything to wait for.
+async function waitForJobResults(page, combinedSelector, timeout = 10000) {
+    await page.waitForSelector(combinedSelector, { timeout }).catch(() => {});
+}
+
 async function scrapeIndeed(page, keyword, location) {
     const IndeedUrl = `https://ng.indeed.com/jobs?q=${keyword}&l=${location}`;
 
@@ -104,6 +115,7 @@ async function scrapeIndeed(page, keyword, location) {
 
         console.log(`Navigating to Indeed URL: ${IndeedUrl}`);
         await page.goto(IndeedUrl, { waitUntil: "domcontentloaded", timeout: 60000 }); // 60s timeout
+        await waitForJobResults(page, '.job_seen_beacon, .jobsearch-ResultsList li, [data-jk]');
 
         const jobs = await page.evaluate(() => {
             const selectors = ['.job_seen_beacon', '.jobsearch-ResultsList li', '[data-jk]']; // Fallback selectors
@@ -217,9 +229,14 @@ async function scrapeLinkedIn(page, keyword, location) {
 
         console.log(`Navigating to LinkedIn URL: ${linkedinUrl}`);
         await page.goto(linkedinUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+        await waitForJobResults(page, '.job-search-card, .base-search-card');
 
         const jobs = await page.evaluate(() => {
-            const selectors = ['li', '.job-search-card', '.base-search-card']; // Fallback selectors
+            // 'li' used to be a fallback here — far too broad, it matches any list
+            // item anywhere on the page (nav menus, footer links, anything), not
+            // just job cards, so a real selector mismatch would silently scrape
+            // garbage instead of correctly falling through to 0 results.
+            const selectors = ['.job-search-card', '.base-search-card']; // Fallback selectors
             let elements = [];
             for (const selector of selectors) {
                 elements = document.querySelectorAll(selector);
@@ -331,6 +348,7 @@ async function scrapeJobberman(page, keyword, location) {
 
         console.log(`Navigating to Jobberman URL: ${jobbermanUrl}`);
         await page.goto(jobbermanUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+        await waitForJobResults(page, '[data-cy=listing-cards-components], .job-card, .listing-card');
 
         const jobs = await page.evaluate(() => {
             const selectors = ['[data-cy=listing-cards-components]', '.job-card', '.listing-card']; // Fallback selectors
