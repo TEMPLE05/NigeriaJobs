@@ -1,6 +1,6 @@
 # JobVista.NG — Backend
 
-Express API that scrapes job listings from Indeed, LinkedIn, and Jobberman, stores them in MongoDB, and serves them to the frontend. Also handles CV generation/parsing and (optionally) AI job-fit analysis.
+Express API that scrapes job listings from Indeed, LinkedIn, and Jobberman, stores them in MongoDB, and serves them to the frontend. Also handles CV generation and parsing.
 
 ## Prerequisites
 
@@ -20,7 +20,6 @@ Fill in `.env`:
 |---|---|---|
 | `MONGODB_URI` | Yes | MongoDB connection string |
 | `PORT` | No | Defaults to `4000` |
-| `OPENAI_API_KEY` | No | Only needed for `/api/cv/analyze` (AI job-fit suggestions). Everything else works without it. |
 
 ```sh
 npm start
@@ -43,7 +42,6 @@ npm start
 
 - `POST /api/cv/generate` — build a CV PDF from structured form data, with optional local content enhancement
 - `POST /api/cv/enhance` — upload a PDF/DOCX (`multipart/form-data`, field `cvFile`); parses and restructures it, then generates an enhanced CV PDF
-- `POST /api/cv/analyze` — AI-powered job-fit suggestions given a job description + CV data (requires `OPENAI_API_KEY`)
 - `GET /api/cv/download/:filename` — download a generated CV PDF (deletes it from disk after download)
 
 ## How it works

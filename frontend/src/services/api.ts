@@ -75,11 +75,4 @@ export const cvApi = {
     });
     return response.data;
   },
-
-  // Analyze job and provide CV improvement suggestions (proxied through our backend,
-  // which holds the OpenAI key server-side so it's never exposed to the browser)
-  analyzeJob: async (jobDescription: string, cvData: string): Promise<string> => {
-    const response = await api.post('/api/cv/analyze', { jobDescription, cvData });
-    return response.data.result;
-  }
 };

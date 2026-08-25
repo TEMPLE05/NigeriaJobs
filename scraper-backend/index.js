@@ -783,65 +783,12 @@ function parseCVText(text) {
     };
 }
 
-// Job-fit analysis via OpenAI (server-side only — key never reaches the browser)
-app.post('/api/cv/analyze', async (req, res) => {
-    try {
-        const { jobDescription, cvData } = req.body;
-
-        if (!jobDescription || !cvData) {
-            return res.status(400).json({ error: 'jobDescription and cvData are required' });
-        }
-
-        const apiKey = process.env.OPENAI_API_KEY;
-        if (!apiKey) {
-            return res.status(503).json({ error: 'AI analysis is not configured on this server' });
-        }
-
-        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are an expert CV consultant. Analyze the provided job description and CV data, then provide specific, actionable suggestions to improve the CV for better alignment with the job requirements.'
-                    },
-                    {
-                        role: 'user',
-                        content: `Job Description:\n${jobDescription}\n\nCV Data:\n${typeof cvData === 'string' ? cvData : JSON.stringify(cvData)}\n\nPlease provide detailed suggestions to improve this CV for this specific job.`
-                    }
-                ],
-                max_tokens: 1000,
-                temperature: 0.7
-            })
-        });
-
-        if (!openaiResponse.ok) {
-            const errText = await openaiResponse.text();
-            console.error('OpenAI API error:', openaiResponse.status, errText);
-            return res.status(502).json({ error: 'AI analysis service failed' });
-        }
-
-        const data = await openaiResponse.json();
-        const result = data.choices?.[0]?.message?.content || '';
-
-        res.json({ result });
-    } catch (error) {
-        console.error('Error analyzing job fit:', error);
-        res.status(500).json({ error: 'Failed to analyze job fit' });
-    }
-});
-
 // PDF Download endpoint
 app.get('/api/cv/download/:filename', (req, res) => {
     // path.basename strips any directory components (e.g. "../../.env"),
     // so this can never resolve outside uploads/ — without it, req.params.filename
     // went straight into path.join unsanitized, letting anyone download the
-    // server's .env (MongoDB URI, OpenAI key) or any other readable file.
+    // server's .env (MongoDB credentials) or any other readable file.
     const filename = path.basename(req.params.filename);
     const filePath = path.join('uploads', filename);
 
