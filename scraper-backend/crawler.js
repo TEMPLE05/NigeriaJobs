@@ -126,11 +126,11 @@ async function scrapeIndeed(page, keyword, location) {
             }
             return Array.from(elements, (e) => ({
                 title: e.querySelector('h2 a span[title], .jobTitle, a')?.innerText || 'N/A',
-                companyName: e.querySelector('.companyName, .company')?.innerText || 'N/A',
+                companyName: e.querySelector('[data-testid="company-name"], .companyName, .company')?.innerText || 'N/A',
                 jobLocation: e.querySelector('.companyLocation, .location')?.innerText || 'N/A',
                 jobDuration: e.querySelector('time, .date')?.innerText || 'N/A',
                 jobURL: e.querySelector('h2 a, a')?.href ? new URL(e.querySelector('h2 a, a').href, window.location.origin).href : 'N/A',
-                salary: e.querySelector('.salary-snippet, .salary')?.innerText || null,
+                salary: e.querySelector('[data-testid*="salary-snippet"], .salary-snippet, .salary')?.innerText || null,
             }));
         });
 
@@ -357,15 +357,28 @@ async function scrapeJobberman(page, keyword, location) {
                 elements = document.querySelectorAll(selector);
                 if (elements.length > 0) break;
             }
-            return Array.from(elements, (e) => ({
-                title: e.querySelector('[data-cy=listing-title-link], .job-title, a')?.innerText || 'N/A',
-                companyName: e.querySelector('.text-loading-animate-link, .company-name')?.innerText || 'N/A',
-                companyURL: e.querySelector('.text-loading-animate-link, a')?.href || 'N/A',
-                jobLocation: e.querySelector('.text-loading-hide, .location')?.innerText || 'N/A',
-                jobDuration: e.querySelector('p .text-loading-animate, [data-cy=job-date], .job-date')?.innerText || 'N/A',
-                jobURL: e.querySelector('[data-cy=listing-title-link], a')?.href || 'N/A',
-                salary: e.querySelector('[data-cy=salary-range], .salary')?.innerText || null,
-            }));
+            return Array.from(elements, (e) => {
+                // The company name sits in a plain <p class="text-sm ... text-loading-animate">
+                // sibling right after the title link — the title itself reuses
+                // "text-loading-animate" too (as "text-lg"), so match on the
+                // "text-sm" size class to avoid grabbing the title by accident.
+                const companyEl = e.querySelector('p.text-sm.text-loading-animate, .company-name');
+
+                // Salary has no dedicated class — it's one of several plain
+                // badge <span> elements (alongside location/job-type), so find
+                // it by its "NGN"/currency-symbol text instead of a selector.
+                const badge = Array.from(e.querySelectorAll('span')).find(s => /NGN|₦|\$/.test(s.innerText || ''));
+
+                return {
+                    title: e.querySelector('[data-cy=listing-title-link], .job-title, a')?.innerText || 'N/A',
+                    companyName: companyEl?.innerText || 'N/A',
+                    companyURL: e.querySelector('.text-loading-animate-link, a')?.href || 'N/A',
+                    jobLocation: e.querySelector('.text-loading-hide, .location')?.innerText || 'N/A',
+                    jobDuration: e.querySelector('p .text-loading-animate, [data-cy=job-date], .job-date')?.innerText || 'N/A',
+                    jobURL: e.querySelector('[data-cy=listing-title-link], a')?.href || 'N/A',
+                    salary: (e.querySelector('[data-cy=salary-range], .salary')?.innerText) || badge?.innerText || null,
+                };
+            });
         });
 
         console.log(`${jobs.length} jobs extracted from Jobberman for ${keyword} in ${location}`);
