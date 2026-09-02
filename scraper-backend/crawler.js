@@ -98,8 +98,8 @@ async function waitForJobResults(page, combinedSelector, timeout = 10000) {
     await page.waitForSelector(combinedSelector, { timeout }).catch(() => {});
 }
 
-async function scrapeIndeed(page, keyword, location) {
-    const IndeedUrl = `https://ng.indeed.com/jobs?q=${keyword}&l=${location}`;
+async function scrapeIndeed(page, keyword, location, pageNum = 0) {
+    const IndeedUrl = `https://ng.indeed.com/jobs?q=${keyword}&l=${location}&start=${pageNum * 10}`;
 
     try {
         await page.setViewport({ width: 1920, height: 1080 });
@@ -212,8 +212,8 @@ async function scrapeIndeed(page, keyword, location) {
     }
 }
 
-async function scrapeLinkedIn(page, keyword, location) {
-    const linkedinUrl = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${keyword}&location=${location}`;
+async function scrapeLinkedIn(page, keyword, location, pageNum = 0) {
+    const linkedinUrl = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${keyword}&location=${location}&start=${pageNum * 25}`;
 
     try {
         await page.setViewport({ width: 1920, height: 1080 });
@@ -331,8 +331,8 @@ async function scrapeLinkedIn(page, keyword, location) {
     }
 }
 
-async function scrapeJobberman(page, keyword, location) {
-    const jobbermanUrl = `https://www.jobberman.com/jobs?q=${keyword}&l=${location}`;
+async function scrapeJobberman(page, keyword, location, pageNum = 0) {
+    const jobbermanUrl = `https://www.jobberman.com/jobs?q=${keyword}&l=${location}&page=${pageNum + 1}`;
 
     try {
         await page.setViewport({ width: 1920, height: 1080 });
@@ -459,34 +459,60 @@ async function scrapeJobberman(page, keyword, location) {
     }
 }
 
+// Each site's first results page only holds ~10-20 listings, and a lot of
+// those overlap across keyword searches (the same posting shows up under
+// "developer" and "backend" alike) — before dedup this looked like more
+// coverage than it was. Pulling a second page per site roughly doubles the
+// raw pool feeding into the same dedup logic, which is real growth instead
+// of inflated counts.
+const PAGES_PER_SITE = 2;
+
+// Each site-scrape function calls page.setRequestInterception(true) and adds
+// its own 'request' listener — fine for a single call, but calling it twice
+// on the SAME page stacks a second listener on top of the first, and both
+// try to handle the next navigation's requests, crashing with "Request is
+// already handled!". A fresh tab per page-fetch avoids that entirely, at the
+// cost of a bit more tab churn (cheap relative to the page load itself).
+async function scrapeSitePaginated(browser, scrapeFn, keyword, location, delay) {
+    let allJobs = [];
+    for (let p = 0; p < PAGES_PER_SITE; p++) {
+        const page = await browser.newPage();
+        try {
+            const pageJobs = await scrapeFn(page, keyword, location, p);
+            allJobs = allJobs.concat(pageJobs);
+        } finally {
+            await page.close();
+        }
+        if (p < PAGES_PER_SITE - 1) await delay(1500);
+    }
+    return allJobs;
+}
+
 async function scrapeAllPlatforms(keyword, location) {
     const browser = await createBrowser();
     try {
-        const pageIndeed = await browser.newPage();
-        const pageLinkedIn = await browser.newPage();
-        const pageJobberman = await browser.newPage();
-
         // Add delays between requests to avoid rate limiting
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        // Locations that work well with Indeed (geographic)
-        const indeedValidLocations = ['nigeria', 'abuja', 'lagos'];
+        // Locations that work well with Indeed (geographic) — everything
+        // except 'remote', which isn't a real place Indeed can filter on.
+        const indeedValidLocations = ['nigeria', 'abuja', 'lagos', 'port harcourt', 'ibadan', 'kano', 'enugu'];
 
         // Scrape platforms sequentially with delays to avoid overwhelming servers
         console.log(`Starting scrape for ${keyword} in ${location}`);
 
         let indeedJobs = [];
         if (indeedValidLocations.includes(location.toLowerCase())) {
-            indeedJobs = await scrapeIndeed(pageIndeed, keyword, location);
+            indeedJobs = await scrapeSitePaginated(browser, scrapeIndeed, keyword, location, delay);
         } else {
             console.log(`Skipping Indeed for non-geographic location: ${location}`);
         }
         await delay(2000); // 2 second delay
 
-        const linkedInJobs = await scrapeLinkedIn(pageLinkedIn, keyword, location);
+        const linkedInJobs = await scrapeSitePaginated(browser, scrapeLinkedIn, keyword, location, delay);
         await delay(2000); // 2 second delay
 
-        const jobbermanJobs = await scrapeJobberman(pageJobberman, keyword, location);
+        const jobbermanJobs = await scrapeSitePaginated(browser, scrapeJobberman, keyword, location, delay);
 
         const totalJobs = indeedJobs.length + linkedInJobs.length + jobbermanJobs.length;
         console.log(`Completed scraping ${totalJobs} jobs for ${keyword} in ${location}`);

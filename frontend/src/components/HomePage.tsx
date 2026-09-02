@@ -244,7 +244,7 @@ const HomePage: React.FC<HomePageProps> = ({
               <button
                 onClick={handleCleanup}
                 disabled={cleanupLoading}
-                title="Remove jobs older than 7 days"
+                title="Remove jobs older than 14 days"
                 className="flex items-center space-x-2 px-2.5 py-1.5 rounded-lg transition-colors duration-200 text-xs font-medium disabled:opacity-50"
                 style={{color: 'var(--card-secondary-text-color)'}}
               >

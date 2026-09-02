@@ -134,7 +134,7 @@ const keywords = ['developer', 'engineer', 'software', 'frontend', 'fullstack', 
 // `location` search param to LinkedIn/Jobberman doesn't filter anything meaningful,
 // it just burns scrape time. Job type is already classified per-job from its title/
 // duration text in classifyJobType(), so nothing is lost by dropping them here.
-const locations = ['nigeria', 'remote', 'abuja', 'lagos'];
+const locations = ['nigeria', 'remote', 'abuja', 'lagos', 'port harcourt', 'ibadan', 'kano', 'enugu'];
 
 // Prevents a scrape cycle from starting while a previous one (cron or manual) is
 // still running. The full keyword x location matrix can take longer than the
@@ -199,15 +199,15 @@ cron.schedule('0 * * * *', () => {
     });
 });
 
-// Cron function for deleting jobs older than a week from DB
+// Cron function for deleting jobs older than the retention window from DB
 cron.schedule('0 0 * * 0', async () => {
     console.log('Weekly deletion cron job started');
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const retentionCutoff = new Date();
+    retentionCutoff.setDate(retentionCutoff.getDate() - 14);
 
     try {
-        const result = await Job.deleteMany({ scrapedAt: { $lt: oneWeekAgo } });
-        console.log(`Deleted ${result.deletedCount} jobs older than a week.`);
+        const result = await Job.deleteMany({ scrapedAt: { $lt: retentionCutoff } });
+        console.log(`Deleted ${result.deletedCount} jobs older than 14 days.`);
     } catch (error) {
         console.error('Error deleting old jobs:', error);
     }
@@ -245,8 +245,8 @@ app.get('/api/jobs', async (req, res) => {
         let jobs;
         let totalJobs;
 
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        const query = { scrapedAt: { $gte: sevenDaysAgo } };
+        const retentionCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+        const query = { scrapedAt: { $gte: retentionCutoff } };
 
         // Both keyword and level match against `title`, so they're combined
         // via $and rather than one overwriting the other on `query.title`.
@@ -347,7 +347,7 @@ app.get('/api/jobs', async (req, res) => {
             console.log(`No jobs found with initial search, trying fallback search...`);
             const fallbackQuery = {
                 title: { $regex: new RegExp(keyword, 'i') },
-                scrapedAt: { $gte: sevenDaysAgo }
+                scrapedAt: { $gte: retentionCutoff }
             };
 
             const fallbackPipeline = [
@@ -468,14 +468,14 @@ app.get('/api/results', async (req, res) => {
 });
 app.delete('/api/cleanup', async (req, res) => {
     try {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const retentionCutoff = new Date();
+        retentionCutoff.setDate(retentionCutoff.getDate() - 14);
 
-        const result = await Job.deleteMany({ scrapedAt: { $lt: oneWeekAgo } });
-        console.log(`Manual cleanup: Deleted ${result.deletedCount} jobs older than a week.`);
+        const result = await Job.deleteMany({ scrapedAt: { $lt: retentionCutoff } });
+        console.log(`Manual cleanup: Deleted ${result.deletedCount} jobs older than 14 days.`);
 
         res.json({
-            message: `Cleanup completed. Deleted ${result.deletedCount} jobs older than 7 days.`,
+            message: `Cleanup completed. Deleted ${result.deletedCount} jobs older than 14 days.`,
             deletedCount: result.deletedCount
         });
     } catch (error) {
