@@ -336,79 +336,13 @@ app.get('/api/jobs', async (req, res) => {
             console.log(`Sample job titles:`, jobs.slice(0, 3).map(job => job.title));
         }
 
-        // totalJobs === 0 (not just jobs.length === 0) — the latter also
-        // triggers on any page past the end of a small-but-real result set
-        // (e.g. 5 real matches, page 2 legitimately has nothing left), which
-        // used to silently drop the level/location/source filters and swap
-        // in a totally different, unfiltered result set with an unrelated
-        // page count — stranding the user on a page pagination could no
-        // longer make sense of.
-        if (totalJobs === 0 && keyword) {
-            console.log(`No jobs found with initial search, trying fallback search...`);
-            const fallbackQuery = {
-                title: { $regex: new RegExp(keyword, 'i') },
-                scrapedAt: { $gte: retentionCutoff }
-            };
-
-            const fallbackPipeline = [
-                { $match: fallbackQuery },
-                { $sort: { scrapedAt: -1 } },
-                {
-                    $group: {
-                        _id: "$jobURL",
-                        doc: { $first: "$$ROOT" }
-                    }
-                },
-                {
-                    $replaceRoot: { newRoot: "$doc" }
-                },
-                {
-                    $addFields: {
-                        randomSort: { $rand: {} }
-                    }
-                },
-                {
-                    $sort: {
-                        scrapedAt: -1,
-                        randomSort: 1
-                    }
-                },
-                {
-                    $facet: {
-                        totalCount: [{ $count: "count" }],
-                        jobs: [
-                            { $skip: skip },
-                            { $limit: limit },
-                            {
-                                $project: {
-                                    _id: 1,
-                                    title: 1,
-                                    companyName: 1,
-                                    jobLocation: 1,
-                                    jobType: 1,
-                                    salary: 1,
-                                    scrapedAt: 1,
-                                    source: 1,
-                                    jobURL: 1,
-                                    keyword: 1,
-                                    location: 1
-                                }
-                            }
-                        ]
-                    }
-                }
-            ];
-
-            const fallbackAggResult = await Job.aggregate(fallbackPipeline).hint({ scrapedAt: -1, jobURL: 1 });
-            totalJobs = fallbackAggResult[0]?.totalCount?.[0]?.count || 0;
-            const similarJobs = fallbackAggResult[0]?.jobs || [];
-
-            console.log(`Fallback search found ${similarJobs.length} jobs`);
-            if (similarJobs.length > 0) {
-                jobs = similarJobs;
-                console.log(`Using fallback results. Sample titles:`, similarJobs.slice(0, 3).map(job => job.title));
-            }
-        }
+        // A genuine zero-match result (e.g. no Entry-level developer jobs in
+        // Kano right now) is returned as-is here — this used to fall back to
+        // a keyword-only search that silently dropped the level/location/
+        // source filters and showed unrelated jobs instead, which looked
+        // like the app had forgotten the filters the user just applied. The
+        // frontend already renders a proper "No jobs found" empty state, so
+        // there's no need to paper over an honest empty result.
 
         const totalPages = Math.ceil(totalJobs / limit);
 
