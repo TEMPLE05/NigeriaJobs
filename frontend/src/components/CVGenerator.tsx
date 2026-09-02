@@ -369,7 +369,7 @@ const CVGenerator: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 md:gap-8">
+      <div className="grid grid-cols-[3fr_2fr] md:grid-cols-2 gap-3 md:gap-8">
         {/* Input Section */}
         <div className="space-y-3 md:space-y-6">
           {activeTab === 'create' ? (
