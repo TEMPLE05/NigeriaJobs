@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Job, JobResponse } from '../types/Job';
+import { Job, JobResponse, FilterSuggestion } from '../types/Job';
 import { ViewToggle } from './ViewToggle';
 import { MASCOT_ICON_URL } from '../utils/branding';
 import { JobListItem } from './JobListItem';
@@ -27,6 +27,8 @@ interface HomePageProps {
   loading: boolean;
   error: string | null;
   pagination: JobResponse['pagination'] | null;
+  filterSuggestions?: FilterSuggestion[];
+  clearFilter?: (filterKey: FilterSuggestion['filter']) => void;
   currentPage: number;
   fetchJobs: (keyword?: string, location?: string, source?: string, page?: number, limit?: number, level?: string) => void;
   handlePageChange: (page: number) => void;
@@ -40,7 +42,7 @@ const HomePage: React.FC<HomePageProps> = ({
   source, setSource,
   level, setLevel,
   cleanupLoading, cleanupMessage, handleCleanup,
-  jobs, loading, error, pagination, currentPage, fetchJobs, handlePageChange,
+  jobs, loading, error, pagination, filterSuggestions, clearFilter, currentPage, fetchJobs, handlePageChange,
   viewMode, setViewMode,
 }) => {
   return (
@@ -359,6 +361,20 @@ const HomePage: React.FC<HomePageProps> = ({
                 <p style={{color: 'var(--card-secondary-text-color)'}}>
                   Try adjusting your search criteria or filters
                 </p>
+                {filterSuggestions && filterSuggestions.length > 0 && clearFilter && (
+                  <div className="mt-4 flex flex-col items-center gap-2">
+                    {filterSuggestions.map((s) => (
+                      <button
+                        key={s.filter}
+                        onClick={() => clearFilter(s.filter)}
+                        className="text-sm px-4 py-2 rounded-full border transition-colors hover:opacity-80"
+                        style={{ borderColor: 'var(--badge-border-color)', color: 'var(--card-text-color)', backgroundColor: 'var(--card-bg-color)' }}
+                      >
+                        Remove "{s.label}" filter — {s.matchCount} job{s.matchCount === 1 ? '' : 's'} match{s.matchCount === 1 ? 'es' : ''} without it
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

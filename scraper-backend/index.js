@@ -344,6 +344,53 @@ app.get('/api/jobs', async (req, res) => {
         // frontend already renders a proper "No jobs found" empty state, so
         // there's no need to paper over an honest empty result.
 
+        // On a genuine zero-match result, figure out which specific active
+        // filter is the blocker — re-run the search with just that one
+        // filter dropped (others kept) and see if it would then match
+        // something. Only runs on the empty-result path, so the extra
+        // queries are rare, not a cost on every normal search.
+        const filterSuggestions = [];
+        if (totalJobs === 0) {
+            const activeFilters = [];
+            if (keyword) activeFilters.push({ key: 'keyword', label: 'Search Keyword' });
+            if (level && EXPERIENCE_LEVEL_PATTERNS[level]) activeFilters.push({ key: 'level', label: 'Experience Level' });
+            if (location) activeFilters.push({ key: 'location', label: 'Job Location' });
+            if (source) activeFilters.push({ key: 'source', label: 'Job Source' });
+
+            for (const filter of activeFilters) {
+                const relaxedQuery = { scrapedAt: { $gte: retentionCutoff } };
+                const relaxedTitleConditions = [];
+                if (keyword && filter.key !== 'keyword') {
+                    const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    relaxedTitleConditions.push({ title: { $regex: new RegExp(escapedKeyword, 'i') } });
+                }
+                if (level && EXPERIENCE_LEVEL_PATTERNS[level] && filter.key !== 'level') {
+                    relaxedTitleConditions.push({ title: { $regex: EXPERIENCE_LEVEL_PATTERNS[level] } });
+                }
+                if (relaxedTitleConditions.length === 1) {
+                    Object.assign(relaxedQuery, relaxedTitleConditions[0]);
+                } else if (relaxedTitleConditions.length > 1) {
+                    relaxedQuery.$and = relaxedTitleConditions;
+                }
+                if (location && filter.key !== 'location') {
+                    relaxedQuery.jobLocation = { $regex: new RegExp(location, 'i') };
+                }
+                if (source && filter.key !== 'source') {
+                    relaxedQuery.source = source;
+                }
+
+                const countResult = await Job.aggregate([
+                    { $match: relaxedQuery },
+                    { $group: { _id: "$jobURL" } },
+                    { $count: "count" }
+                ]);
+                const matchCount = countResult[0]?.count || 0;
+                if (matchCount > 0) {
+                    filterSuggestions.push({ filter: filter.key, label: filter.label, matchCount });
+                }
+            }
+        }
+
         const totalPages = Math.ceil(totalJobs / limit);
 
         const result = {
@@ -354,7 +401,8 @@ app.get('/api/jobs', async (req, res) => {
                 totalJobs,
                 hasNextPage: page < totalPages,
                 hasPrevPage: page > 1
-            }
+            },
+            filterSuggestions
         };
 
         // Cache the result

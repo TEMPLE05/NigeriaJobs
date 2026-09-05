@@ -10,6 +10,7 @@ import Preloader from './components/Preloader';
 import AppShell from './components/AppShell';
 import HomePage from './components/HomePage';
 import { usePersistentState } from './hooks/usePersistentState';
+import { FilterSuggestion } from './types/Job';
 
 const App: React.FC = () => {
   const [keyword, setKeyword] = useState('');
@@ -22,7 +23,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = usePersistentState<'card' | 'list'>('viewMode', 'card');
 
-  const { jobs, loading, error, pagination, fetchJobs } = useJobs();
+  const { jobs, loading, error, pagination, filterSuggestions, fetchJobs } = useJobs();
   const mountTimeRef = useRef(Date.now());
   const retryCountRef = useRef(0);
 
@@ -98,6 +99,19 @@ const App: React.FC = () => {
     setCurrentPage(page);
     fetchJobs(keyword.trim() || undefined, location.trim() || undefined, source, page, 8, level);
   }, [keyword, location, source, level, fetchJobs]);
+
+  // Lets a "remove this filter" suggestion clear just the one filter that's
+  // blocking a zero-result search — the debounced-search effect below picks
+  // up the state change and re-fetches automatically.
+  const clearFilter = useCallback((filterKey: FilterSuggestion['filter']) => {
+    setCurrentPage(1);
+    switch (filterKey) {
+      case 'keyword': setKeyword(''); break;
+      case 'location': setLocation(''); break;
+      case 'level': setLevel('All'); break;
+      case 'source': setSource('All'); break;
+    }
+  }, []);
 
   // Self-heal: if the current page ends up beyond what the server says is
   // valid (e.g. landing past the last page of a narrow search, or the
@@ -175,6 +189,8 @@ const App: React.FC = () => {
               loading={loading}
               error={error}
               pagination={pagination}
+              filterSuggestions={filterSuggestions}
+              clearFilter={clearFilter}
               currentPage={currentPage}
               fetchJobs={fetchJobs}
               handlePageChange={handlePageChange}

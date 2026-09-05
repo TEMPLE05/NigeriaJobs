@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Job, JobResponse } from '../types/Job';
+import { Job, JobResponse, FilterSuggestion } from '../types/Job';
 import { jobsApi } from '../services/api';
 
 export const useJobs = () => {
@@ -7,6 +7,7 @@ export const useJobs = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<JobResponse['pagination'] | null>(null);
+  const [filterSuggestions, setFilterSuggestions] = useState<FilterSuggestion[]>([]);
 
   const fetchJobs = useCallback(async (
     keyword?: string,
@@ -23,6 +24,7 @@ export const useJobs = () => {
       const response = await jobsApi.getJobs(keyword, location, source, page, limit, level);
       setJobs(response.jobs);
       setPagination(response.pagination);
+      setFilterSuggestions(response.filterSuggestions || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
       console.error('Error fetching jobs:', err);
@@ -36,6 +38,7 @@ export const useJobs = () => {
     loading,
     error,
     pagination,
+    filterSuggestions,
     fetchJobs
   };
 };

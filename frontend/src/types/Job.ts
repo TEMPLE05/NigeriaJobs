@@ -25,6 +25,12 @@ export interface JobFilters {
   dateRange?: string;
 }
 
+export interface FilterSuggestion {
+  filter: 'keyword' | 'level' | 'location' | 'source';
+  label: string;
+  matchCount: number;
+}
+
 export interface JobResponse {
   jobs: Job[];
   pagination: {
@@ -34,6 +40,7 @@ export interface JobResponse {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   };
+  filterSuggestions?: FilterSuggestion[];
 }
 
 export interface JobStats {
